@@ -1,2 +1,1 @@
-# algo-project
-the algo project
+Project for CS412. [unfinished details]
