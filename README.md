@@ -31,13 +31,3 @@ These systems require the shortest paths to be recalculated efficiently upon upd
 - Update time complexity: **O(n log m)**
 - Optimized for time and memory usage.
 
-## 📊 Experimental Results
-
-We have compared the performance of our implementation with other known algorithms for dynamic shortest paths. Our results show:
-
-- Improved performance in both time and space complexity.
-- Efficient handling of online update sequences.
-- Better scalability with larger graphs.
-
-## 🏗️ Project Structure
-
