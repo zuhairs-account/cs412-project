@@ -1,41 +1,180 @@
-\documentclass{article}
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}    % Character encoding
+\usepackage{amsmath}           % Advanced math typesetting
+\usepackage{geometry}          % Page layout
+\usepackage{graphicx}          % Figures
+\usepackage{fancyhdr}          % Custom headers/footers
+\usepackage{sectsty}           % Section font customization
+\usepackage{xcolor}            % Color support
+\usepackage{listings}          % Code snippets
+\usepackage{float}
 \usepackage{hyperref}
-\usepackage{geometry}
-\usepackage{listings}
+
+% Geometry setup
 \geometry{a4paper, margin=1in}
 
-\title{
-CS/CE 412/471 Algorithms: Design \& Analysis\\Paper Selection Proposal: \textit{Dynamizing Dijkstra}}
-\author {Adina Adnan Mansoor, Syeda Rija Hasan Abidi, Syed Zuhair Abbas Rizvi}
+% Define colors 9b163c
+\definecolor{bgcolor}{RGB}{236, 236, 236}      % Background color
+\definecolor{bodycolor}{RGB}{50, 50, 50}       % Body text color
+\definecolor{titlecolor2}{RGB}{169, 32, 32}   % Section title color
+
+% Set background and text colors
+\pagecolor{bgcolor}
+\color{bodycolor}
+
+% Font settings
+\renewcommand{\rmdefault}{cmr}     % Body font: Computer Modern serif
+\renewcommand{\sfdefault}{cmss}    % Heading font: Computer Modern sans-serif
+\allsectionsfont{\sffamily \color{titlecolor2}}  % Sans-serif headings in orange
+
+% Header/footer setup
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{CS/CE 412/471 $\mid$ Algorithms}    % Right header
+\lhead{Technical Summary}   % Left header
+\cfoot{\thepage}               % Page number in footer
+\setlength{\headheight}{15.0pt}
+
+% Listings setup for code
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+}
+
+% Title and author setup
+\author{Your Name}
 \date{\today}
+\newcommand{\thetitle}{Dynamizing Dijkstra for Dynamic Shortest Paths}
+\newcommand{\thedate}{\today}
 
 \begin{document}
 
-\maketitle
+% Title page
+\begin{titlepage}
+    \centering
+    \vspace*{3.5cm}
+    % Uncomment and replace with your logo if needed
+    % \includegraphics[scale=10]{Logosmall.png}\\[1.0cm]
+    \textsc{\LARGE Habib University}\\[1.0cm]
+    \textsc{\large Syed Zuhair Abbas Rizvi, Syeda Rija Hasan Abidi, \\Adina Adnan Mansoor}\\[0.5cm]
+    \rule{\linewidth}{0.2mm}\\[0.8cm]
+    {
+    \sffamily \huge \bfseries
+    \linespread{1}\selectfont % Adjust line spacing
+    \begin{center} % Center the parbox
+        \parbox{0.9\textwidth}{\centering \thetitle} % Center text inside parbox
+    \end{center}
+    \vspace*{0.4cm}
 
-\section{Paper Details}
+}
+    \rule{\linewidth}{0.2mm}\\[0.8cm]
+    {\large \thedate}\\[1cm]
+    CS/CE 412/471 Algorithms: Design \& Analysis\\
+    Technical Summary 
+\end{titlepage}
+
+% Main content
+\section*{Problem and Contribution}
+Over the years, many efficient algorithms have been proposed to solve the shortest path problem for a single source given a graph as an input. These fall apart when this problem becomes \textbf{dynamic}, where the input's topology---vertices, edges, or weights---morphs over time. The crux of the problem is efficiency; algorithms designed for the static version of the problem have to recompute paths entirely per update which is mediocre for applications such as real-time navigation. 
+
+Here is where this \href{https://www.sciencedirect.com/science/article/pii/S1319157817303828}{paper} brings forward its contribution: a dynamization of Dijkstra's algorithm. Using primarily a \textbf{retroactive priority queue}, the new algorithm adjusts to updates with a time complexity per update of $O(n \log m)$ for a graph of $n$ vertices and $m$ edges. Most importantly, only affected paths are updated, a cleaner and faster approach as opposed to static algorithms which recompute every single path.
+
+
+
+\section*{Algorithm Description}
+The core idea of the Dynamic Dijktsra algorithm is to adapt the traditional Dijkstra algorithm to handle dynamic graphs where the edge weights may change. Instead of recalculating the entire shortest path tree after each weight updates, the algorithm uses a retroactive priority queue to efficiently adjust operations in response to the weight change. \\
+
+\textbf{Inputs:}
 \begin{itemize}
-\setlength{\itemsep}{1pt}
-    \item \textbf{Title:} Dynamizing Dijkstra: A Solution to Dynamic Shortest Path Problem through Retroactive Priority Queue
-    \item \textbf{Authors:} Sunita, Deepak Garg
-    \item \textbf{Conference:} Journal of King Saud University – Computer and Information Sciences
-    \item \textbf{Year:} 2021
-    \item \textbf{DOI/Link:} \href{https://www.sciencedirect.com/science/article/pii/S1319157817303828}{Link to paper}
+    \item A directed graph G = (V, E, w): where V is the set of Vertices, E is the set of edges and w, the function assigning weights to the edges.
+    \item Source vertex: Starting vertex from where the shortest paths will be calculated 
+    \item Edge Weight Updates: A sequence of updates where the weight of a specific edge changes (increases or decreases)
 \end{itemize}
 
-\section{Summary}
-This paper presents an enhancement to Dijkstra's algorithm by introducing a \textit{retroactive priority queue} (RPQ), allowing insertions and deletions to be invoked or revoked at any point in time. The priority queue is implemented with the help of red-black trees to maintain elements and their lifetimes in the queue. This approach efficiently addresses the dynamic shortest path problem, which is crucial in real-world applications like transportation and network routing. The key contribution is the development of a flexible, dynamic data structure that supports updates without recomputing the entire shortest path tree.
+\textbf{Outputs:}
+\begin{itemize}
+    \item Updated shortest path distances from the source: after each edge weight update, the algorithm returns the new shortest path distances from the source to all the other vertex in the graph
 
-\section{Justification}
-This paper aligns well with our course material. We have been studying and implementing graph algorithms such as the Bellman-Ford Algorithm to solve the shortest path problem, and static Dijkstra's algorithm is also planned for Week 15 of the semester. This paper considers a version of the shortest path problem closer to reality, where the edges are mutable. Using this paper for our project will further enrich our concepts of shortest paths, optimization, graph operations, and their implementation in real-world circumstances. As stated before, dynamic shortest paths are highly relevant to real-world scenarios such as GPS navigation and network optimization. Furthermore, any combinatorial optimization problem can be reduced to a shortest path problem, making this paper both practically and theoretically relevant.
+\end{itemize}
+\subsection*{High Level Logic}
+\subsubsection*{Initialization}
+Run the standard Dijkstra’s algorithm to compute the initial shortest path tree, storing all distances and paths for all vertices. All the initial distances are stored in the RPQ at this point.
 
-\section{Implementation Feasibility}
-The paper contains pseudocode of the dynamic Dijkstra algorithm as well as all the helper functions needed for the RPQ. All project implementation will be done using Python. For experimental analysis, we will generate randomized graphs using Python libraries such as Networkx, matplotlib, etc. and also utilize real-world dynamic graph datasets from various domains and resources such as \href{https://download.geofabrik.de/asia/pakistan.html}{Pakistan's Open-Street Map} and \href{https://snap.stanford.edu/data/soc-sign-bitcoin-otc.html}{Bitcoin OTC}.
+\subsubsection*{Update Handling}
+When an edge weight is updated, for example, an edge $e=(u,v)$ changes by a value $\alpha$, we check if the head vertex $u$ of the updated edge is in the RPQ. 
+\begin{itemize}
+    \item If $u$ is not in the RPQ, then the update doesn’t affect any of the shortest paths, and the algorithm continues with the current distances
+\item If $u$ is active (it hasn’t been finalized as part of any shortest path yet), and weight update reduces the edge weight, adjust the distance to $v$ accordingly.
+\item If $u$ was previously deleted (it was removed from the RPQ during the algorithm execution), then the algorithm averts to the state just before $u$ was deleted and updates all distances for all affected vertices.
 
-\section{Team Responsibilities}
-Given the sequential nature of implementation, analysis, and report-writing phases, all team members will be contributing equally to all phases.
+\end{itemize}
 
-\bibliography{Bib}
+\subsubsection*{Propagation}
+The RPQ identifies which operations were affected by the update (such as "del-min" operations) and re-executes them. This ensures that only the necessary updates are made, and the shortest paths are recalculated for the affected vertices without recalculating the entire graph. Just like static Dijsktra, this algorithm provides the complexity of $O(n \log m)$ for the update time.
+
+
+
+\section*{Comparison}
+The dynamic shortest path problem is an open problem with two overarching existing approaches. One involves reconstructing the graph using a shortest path algorithm on every change, while the other focuses on considering only the nodes and vertices affected by the change. All the modern approaches focus on the latter because of its efficiency. It has been implemented in many variants, but Ramalingam and Reps' algorithm \cite{ramalingam1996computational}\cite{ramalingam1996incremental} has been proven to be the best one in practice \cite{buriol2003speeding}\cite{demetrescu2006experimental}. This algorithm works by identifying the set of affected nodes, which are divided into two sets: one queue of the affected nodes whose shortest path cannot be calculated using the current topology of the shortest path tree 
+ and one heap of the affected nodes whose updated shortest path can be calculated from the current topology of the shortest path tree. Demetrescu et al. enhanced this algorithm by introducing a mechanism to identify the set of affected nodes belonging to the queue, minimizing edge scans \cite{demetrescu2003new}.
+
+Our paper introduces an entirely novel approach to the dynamic shortest path problem by using a retroactive priority queue. Retroactivity helps maintain the historical sequence of events and updates the shortest path when the change occurred. The priority queue enables faster updates of the affected vertex by isolation from the unaffected graph. The number of computations in this case is fewer than those required for maintaining a non-retroactive priority queue because the algorithm targets the affected point in time and applies the update only to that portion. The paper compares the running time of our algorithm with that of Ramalingam et al. and Demetrescu et al.'s algorithms, both the original and those improved by the heap reduction technique proposed by Buriol et al. \cite{buriol2003speeding}. Dynamic Dijkstra performs better in both memory and time than other algorithms as shown in Table \ref{tab:comparisons}.
+
+\begin{table}[H]
+    \centering
+    \label{tab:comparisons}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Algorithm} & \textbf{Time Taken (Seconds)} & \textbf{Memory Usage ($10^6$ Bytes)} \\
+        \hline        
+        \textbf{Dynamic Dijkstra} & \textbf{0.0075} & \textbf{118}\\
+        Demetrescu et al Optimized  & 0.008 & 130  \\
+        Ramalingam et al Optimized & 0.01 & 120  \\
+        Demetrescu  & 0.0325 & 182 \\
+        Ramalingam et al & 0.04 & 140\\
+        
+        \hline
+    \end{tabular}
+        \caption{Comparisons with other Algorithms}
+
+\end{table}
+\\
+
+\section*{Data Structures and Techniques} 
+\begin{itemize}
+\item  \textbf{Retroactive Priority Queue (RPQ),} a priority queue that retroactively adjusts past operations to handle dynamic graph updates. This is the main tool for the algorithm.
+
+\item \textbf{Height-Balanced Trees}, balanced binary trees (T\_ins for inserts, T\_d\_m for delete-min), meant to ensure $O(\log n)$ operations for efficient updates and queries. Two of them are used in the RPQ for this very purpose.
+
+\item \textbf{Graph}, a structure $G = (V, E, w)$ representing vertices, edges, and weights. Our input problem, and evolves over time.
+
+\item \textbf{Predecessor Array (pred)}, an array tracking each vertex’s predecessor in the shortest path tree. This checks if updates affect paths. 
+
+\item \textbf{Distance Array (d)}, an array storing estimated shortest path distances from the source. It updates and compares distances during execution. 
+\end{itemize}
+
+\section*{Implementation Outlook and Challenges}
+
+\begin{itemize}
+    \item \textbf{Complexity of Data Structures:} Implementing the RPQ efficiently with red-black trees can be complex, especially when handling frequent updates or large input size
+\item \textbf{Handling large graphs (large input sizes):} As the number of vertices and edges increase, the time and memory needed to process updates also increase. Managing changes efficiently becomes more and more tricky, especially with more complex data structures like the retroactive priority queue 
+\item \textbf{Numerical Precision:} When the edge weights are floating points, even tiny rounding errors can mess up the distance calculations. So, we need to be extra careful with how we handle these numbers to avoid any mistakes in the final paths.
+\item \textbf{Dynamic updates:} Frequent real-time updates (e.g., in traffic networks) demand efficient RPQ operations and graph modifications, possibly requiring parallel processing or optimized tree structures.
+
+\end{itemize}
+
+
+
+
+
+\bibliographystyle{plain} 
+\bibliography{Bib}        
+
 
 \end{document}
-
