@@ -2,7 +2,6 @@ import sys
 import heapq # Used for standard Dijkstra comparison if needed, not for RPQ
 
 # --- Node Class for Red-Black Tree ---
-# --- Node Class for Red-Black Tree ---
 class Node:
     def __init__(self, key=None, value_dict=None, color='R', parent=None, left=None, right=None):
         self.key = key # The key used for comparison in this specific tree
@@ -56,6 +55,8 @@ class Node:
         # Handle printing TNULL node key
         key_str = "None" if self.key is None else str(self.key)
         return f"K:{key_str} ({self.color},{'V' if self.valid else 'I'})[{val_str}]{link_info}"
+    
+
 # --- Red-Black Tree Implementation ---
 class RedBlackTree:
     def __init__(self, tree_type='T_ins'):
@@ -101,7 +102,7 @@ class RedBlackTree:
         if x.right != self.TNULL:
             return self.minimum(x.right)
         y = x.parent
-        while y != self.TNULL and x == y.right:
+        while y is not None and y != self.TNULL and x == y.right:
             x = y
             y = y.parent
         return y
@@ -111,7 +112,7 @@ class RedBlackTree:
         if x.left != self.TNULL:
             return self.maximum(x.left)
         y = x.parent
-        while y != self.TNULL and x == y.left:
+        while y is not None and y != self.TNULL and x == y.left:
             x = y
             y = y.parent
         return y
@@ -242,7 +243,7 @@ class RedBlackTree:
     def insert(self, value_dict):
         """Inserts a value dictionary into the RBT."""
         key = self._get_key(value_dict)
-        node = Node(key=key, value_dict=value_dict, parent=None, color='R',
+        node = Node(key=key, value_dict=value_dict, parent=self.TNULL, color='R',
                     left=self.TNULL, right=self.TNULL)
 
         y = None
@@ -251,7 +252,7 @@ class RedBlackTree:
         while x != self.TNULL:
             y = x
             # Use __lt__ defined in Node for comparison
-            if node < x:
+            if node.__lt__(x):
                 x = x.left
             else:
                 x = x.right
@@ -508,31 +509,6 @@ class RPQ:
             except ValueError:
                  pass # Node wasn't in the list, ignore
 
-    # def invoke_insert(self, vertex, time, dist, pred):
-    #     """
-    #     Performs Insert(x, t) operation.
-    #     Args:
-    #         vertex: The vertex being inserted.
-    #         time: The insertion time.
-    #         dist: Estimated distance.
-    #         pred: Predecessor vertex.
-    #     Returns:
-    #         The T_d_m node of the first inconsistent Del_Min operation (if any), otherwise None.
-    #     """
-    #     # 1. Check for future inconsistencies in T_d_m
-    #     # Find the smallest deletion time >= t
-    #     inconsistent_del_node = self.T_d_m.search_ge(time)
-    #     # Use T_d_m's TNULL for comparison
-    #     if inconsistent_del_node != self.T_d_m.TNULL:
-    #         # print(f"RPQ Warn: Inserting ({vertex},{time},{dist}) conflicts with future Del_Min at {inconsistent_del_node.key}")
-    #         return inconsistent_del_node # Return the node representing the inconsistent delete
-
-    #     # 2. Perform the insertion in T_ins
-    #     value_dict = {'vertex': vertex, 'ins_time': time, 'dist': dist, 'pred': pred, 'del_time': None}
-    #     new_node = self.T_ins.insert(value_dict)
-    #     self._add_vertex_node(vertex, new_node)
-    #     # print(f"RPQ Insert: {value_dict} -> Node {new_node}")
-    #     return None # No inconsistency found
     def invoke_insert(self, vertex, time, dist, pred):
         """
         Performs Insert(x, t) operation.
@@ -558,75 +534,6 @@ class RPQ:
         self._add_vertex_node(vertex, new_node)
         # print(f"RPQ Insert: {value_dict} -> Node {new_node}")
         return None  # No inconsistency found
-
-    # def invoke_del_min(self, time):
-    #     """
-    #     Performs Del_Min(t) operation.
-    #     Args:
-    #         time: The time at which Del_Min is invoked.
-    #     Returns:
-    #         The value dictionary {'vertex': ..., 'dist': ...} of the deleted element, or None if PQ is empty or becomes inconsistent.
-    #     Raises:
-    #         ValueError: If the operation causes inconsistency with a future operation.
-    #     """
-    #     # Check for future inconsistencies (e.g., another operation at the exact same time)
-    #     # This simple check might need refinement based on exact tie-breaking rules.
-    #     # A stricter check might look for any operation >= time.
-    #     future_op_node = self.T_d_m.search_ge(time)
-    #     # Use T_d_m's TNULL for comparison
-    #     if future_op_node != self.T_d_m.TNULL and future_op_node.key == time:
-    #          raise ValueError(f"invoke_del_min({time}) conflicts with existing operation at the same time.")
-
-    #     # 1. Find the latest Del_Min operation *before* time `t`
-    #     pred_del_node = self.T_d_m.search_le(time - 1e-9) # Search for max key < time
-
-    #     # Use T_ins's TNULL for nodes originating from T_ins
-    #     node_to_delete = self.T_ins.TNULL
-    #     # Use T_d_m's TNULL for nodes originating from T_d_m
-    #     if pred_del_node == self.T_d_m.TNULL:
-    #         # No previous deletions, find the overall minimum valid node in T_ins
-    #         node_to_delete = self.T_ins.find_min_valid()
-    #         # print(f"InvokeDelMin({time}): No prev delete. Min valid in T_ins: {node_to_delete}")
-    #     else:
-    #         # Find the minimum valid node in T_ins *strictly greater* than the previously deleted key
-    #         prev_deleted_ins_node = pred_del_node.t_ins_link
-    #         if prev_deleted_ins_node is None:
-    #              # This case should ideally not happen if links are maintained correctly
-    #              print(f"RPQ Error: T_d_m node at {pred_del_node.key} has no T_ins link!")
-    #              node_to_delete = self.T_ins.find_min_valid() # Fallback: find overall minimum
-    #         # Use T_ins's TNULL when checking the linked node
-    #         elif prev_deleted_ins_node == self.T_ins.TNULL:
-    #             print(f"RPQ Error: T_d_m node at {pred_del_node.key} links to T_ins TNULL!")
-    #             node_to_delete = self.T_ins.find_min_valid() # Fallback
-    #         else:
-    #             threshold_key = prev_deleted_ins_node.key
-    #             # print(f"InvokeDelMin({time}): Prev delete at {pred_del_node.key}, threshold key {threshold_key}")
-    #             node_to_delete = self.T_ins.find_min_valid_greater_than(threshold_key)
-    #             # print(f"InvokeDelMin({time}): Min valid > threshold: {node_to_delete}")
-
-
-    #     # Use T_ins's TNULL for comparison
-    #     if node_to_delete == self.T_ins.TNULL:
-    #         # print(f"RPQ Warn: invoke_del_min({time}) - No valid element found to delete.")
-    #         return None # Priority queue effectively empty at this point
-
-    #     # 2. Mark the T_ins node as invalid
-    #     node_to_delete.valid = False
-    #     # print(f"RPQ DelMin: Marking T_ins node invalid: {node_to_delete}")
-
-
-    #     # 3. Insert a record into T_d_m
-    #     del_value_dict = {'del_time': time, 'vertex': node_to_delete.value['vertex']} # Store minimal info needed
-    #     del_node = self.T_d_m.insert(del_value_dict)
-    #     # print(f"RPQ DelMin: Inserted into T_d_m: {del_node}")
-
-
-    #     # 4. Establish links
-    #     node_to_delete.t_dm_link = del_node
-    #     del_node.t_ins_link = node_to_delete
-
-    #     # Return the value of the deleted element
-    #     return node_to_delete.value.copy() # Return a copy
 
     def invoke_del_min(self, time):
         """
@@ -660,11 +567,35 @@ class RPQ:
                 threshold_key = prev_deleted_ins_node.key
                 node_to_delete = self.T_ins.find_min_valid_greater_than(threshold_key)
 
-        # Ensure the node to delete is valid before marking it invalid
-        if node_to_delete != self.T_ins.TNULL:
-            node_to_delete.valid = False  # Mark as invalid after deletion
-        return node_to_delete.value if node_to_delete != self.T_ins.TNULL else None
 
+        # --- Step 2: Process the identified node ---
+        if node_to_delete == self.T_ins.TNULL:
+            return None # No valid element found
+
+        # --- Step 3: Mark node invalid in T_ins ---
+        if not node_to_delete.valid:
+             print(f"RPQ Warn: invoke_del_min({time}) - Node {node_to_delete} was already invalid!")
+        node_to_delete.valid = False
+
+        # --- Step 4: Insert deletion record into T_d_m --- # <<< INSERTION HAPPENS HERE
+        #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+        del_value_dict = {
+            'del_time': time,
+            'vertex': node_to_delete.value.get('vertex', 'ERROR'),
+            'deleted_ins_key': node_to_delete.key
+        }
+        del_node = self.T_d_m.insert(del_value_dict) # Creates and inserts the T_d_m node
+        #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        # --- Step 5: Establish links --- # <<< LINKING HAPPENS HERE
+        #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+        node_to_delete.t_dm_link = del_node
+        del_node.t_ins_link = node_to_delete
+        #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        # --- Step 6: Return value of the deleted element ---
+        return node_to_delete.value.copy()
+        
     def revoke_insert(self, time):
         """
         Performs Revoke(Insert(t)) operation.
@@ -831,230 +762,203 @@ class RPQ:
 
         return relevant_node
 
-# --- Dynamic Dijkstra Algorithm ---
+
+
 class DynamicDijkstra:
     def __init__(self, num_vertices):
         self.num_vertices = num_vertices
-        # Using adjacency matrix as per paper's suggestion for simplicity
-        # For large sparse graphs, adjacency list + dict lookup is better
         self.graph = [[float('inf')] * num_vertices for _ in range(num_vertices)]
         for i in range(num_vertices):
-            self.graph[i][i] = 0 # Distance to self is 0
-
+            self.graph[i][i] = 0  # Distance to self is 0
         self.dist = [float('inf')] * num_vertices
         self.pred = [None] * num_vertices
         self.rpq = RPQ()
-        self.current_time = 0 # Global time counter
+        self.current_time = 0
+        self.deletion_times = {}  # {vertex: deletion_time}
 
     def initialize(self, source):
-        """Initializes distances and RPQ for the source vertex."""
+        """Initialize with source vertex."""
         self.dist = [float('inf')] * self.num_vertices
         self.pred = [None] * self.num_vertices
-        self.rpq = RPQ() # Reset RPQ
-
-        self.dist[source] = 0
+        self.rpq = RPQ()
+        self.deletion_times = {}
         self.current_time = 0
-        # Insert source into RPQ at time 0
-        inconsistency = self.rpq.invoke_insert(vertex=source, time=self.current_time,
-                                               dist=0, pred=None)
-        if inconsistency:
-             print(f"Init Error: RPQ inconsistency: {inconsistency}") # Should not happen here
-
-        self.current_time += 1 # Increment time after initial setup
-
+        
+        self.dist[source] = 0
+        self.rpq.invoke_insert(vertex=source, time=self.current_time,
+                             dist=0, pred=None)
+        self.current_time += 1
 
     def run_static(self):
-        """Runs Dijkstra using the RPQ until the queue is 'empty' for the current state."""
-        print("\n--- Running Static Dijkstra using RPQ ---")
-        processed_count = 0
-        while processed_count < self.num_vertices:
-            # Find the minimum element *at the current time*
+        """Standard Dijkstra execution."""
+        processed = set()
+        while len(processed) < self.num_vertices:
             min_val = self.rpq.find_min(self.current_time)
-            print(f"Time {self.current_time}: FindMin -> {min_val}")
-
             if min_val is None:
-                 print(f"Time {self.current_time}: RPQ empty or no valid nodes. Stopping.")
-                 break # No more reachable vertices
+                break
 
-            # Perform the Del_Min operation for the found element's vertex at current time
             deleted_val = self.rpq.invoke_del_min(self.current_time)
-            # print(f"Time {self.current_time}: InvokeDelMin -> {deleted_val}")
-
-
             if deleted_val is None:
-                 # This might happen if find_min found something, but intervening
-                 # operations (if any were allowed) made it invalid before del_min.
-                 # Or simply if the queue became empty between find and delete.
-                 print(f"Time {self.current_time}: Del_Min returned None. Continuing.")
-                 self.current_time +=1 # Still advance time
-                 continue
-
+                self.current_time += 1
+                continue
 
             u = deleted_val['vertex']
-            u_dist = deleted_val['dist']
+            self.deletion_times[u] = self.current_time
 
-            # Check if we already processed a shorter path to u
-            # Note: In classic Dijkstra, this check isn't needed because we always
-            # extract the absolute minimum. With RPQ, it's safer to check.
-            if u_dist > self.dist[u]:
-                 # print(f"Time {self.current_time}: Stale entry for {u} ({u_dist} > {self.dist[u]}). Skipping.")
-                 self.current_time +=1
-                 continue
+            if deleted_val['dist'] > self.dist[u]:
+                self.current_time += 1
+                continue
 
-            processed_count += 1
-            # print(f"Time {self.current_time}: Processing vertex {u} with dist {u_dist}")
-
-
-            # Relax neighbors
+            processed.add(u)
             for v in range(self.num_vertices):
-                edge_weight = self.graph[u][v]
-                if edge_weight != float('inf') and u != v:
-                    new_dist_v = self.dist[u] + edge_weight
-                    # print(f"  Checking neighbor {v}: Current dist {self.dist[v]}, New potential dist {new_dist_v}")
-                    if new_dist_v < self.dist[v]:
-                        # print(f"    Relaxation: Found shorter path to {v} via {u}. Dist {new_dist_v}")
-                        self.dist[v] = new_dist_v
-                        self.pred[v] = u
-
-                        # Update RPQ: Insert the new path info for v at current time
-                        # We might need to revoke old inserts for v first if they exist and are now suboptimal.
-                        # Simple approach: Just insert. RPQ's FindMin should handle finding the true minimum later.
-                        # A better approach would use UpdateKey if RPQ supported it, or Revoke+Insert.
-                        # For now, just InvokeInsert:
-                        inconsistency = self.rpq.invoke_insert(vertex=v, time=self.current_time,
-                                                               dist=new_dist_v, pred=u)
-                        if inconsistency:
-                             # Handle inconsistency - e.g., log, try recovery, or fail
-                            print(f"RPQ Inconsistency during relaxation for {v}! Node: {inconsistency}. Halting Relaxation Loop for {u}.")
-                            # This might require complex handling - for now, just log and continue time step
-                            break # Stop relaxing for this u
-
-
-            self.current_time += 1 # Increment time after processing a vertex
-
-        print("--- Static Dijkstra Finished ---")
-        print(f"Final Distances: {self.dist}")
-        print(f"Final Predecessors: {self.pred}")
-
+                if self.graph[u][v] != float('inf') and u != v:
+                    self.relax_edge(u, v)
+            self.current_time += 1
 
     def update_edge(self, u, v, new_weight):
         """
-        Handles dynamic edge weight updates using the D_Dij logic sketch.
-        NOTE: This implementation is a simplified interpretation of the paper's
-              complex retroactive logic. Full retroactivity is hard. This focuses
-              on adjusting the RPQ based on the change.
+        Update edge weight and properly recompute ALL affected shortest paths.
+        Handles both increasing and decreasing weights correctly.
         """
-        print(f"\n--- Updating Edge ({u}, {v}) to weight {new_weight} at time {self.current_time} ---")
         old_weight = self.graph[u][v]
         if old_weight == new_weight:
-            print("  No weight change. Skipping.")
             return
 
         self.graph[u][v] = new_weight
-        # self.graph[v][u] = new_weight # Assuming undirected for simplicity if needed
+        delta = new_weight - old_weight
 
-        # --- Simplified D_Dij Logic ---
-        # The paper's logic is intricate, involving searching T_ins, checking predecessors,
-        # and potentially moving back in time. A full implementation is complex.
-        # Here's a more direct, forward-looking approach inspired by relaxation:
+        if delta < 0:
+            # Edge weight decreased - may improve paths through this edge
+            print(f"Edge ({u},{v}) weight decreased by {-delta}")
+            if self.dist[u] + new_weight < self.dist[v]:
+                print(f"Found shorter path to {v} via {u}: {self.dist[u] + new_weight} < {self.dist[v]}")
+                self.propagate_improvement(v, self.dist[u] + new_weight, u)
+            else:
+                # Even if not immediately better, may affect other paths
+                self.check_potential_improvements(u, v)
+        else:
+            # Edge weight increased - may invalidate paths
+            print(f"Edge ({u},{v}) weight increased by {delta}")
+            if self.pred[v] == u and abs(self.dist[v] - (self.dist[u] + old_weight)) < 1e-9:
+                print(f"Edge was part of shortest path to {v}")
+                affected_vertices = self.find_affected_vertices(v)
+                for vertex in affected_vertices:
+                    self.recompute_shortest_path(vertex)
 
-        # Case 1: Weight Decrease (Potential for shorter paths)
-        if new_weight < old_weight:
-             print(f"  Weight decreased. Potential shorter path from {u} to {v}.")
-             # If the path through u *might* now be better for v
-             new_dist_v = self.dist[u] + new_weight
-             if new_dist_v < self.dist[v]:
-                  print(f"    Found immediately shorter path to {v} ({new_dist_v} < {self.dist[v]}). Updating RPQ.")
-                  # Update distance and predecessor estimation
-                  self.dist[v] = new_dist_v
-                  self.pred[v] = u
-                  # Update RPQ: Add this new, better path possibility.
-                  # Again, ideally use UpdateKey or Revoke+Insert. Using InvokeInsert for now.
-                  inconsistency = self.rpq.invoke_insert(vertex=v, time=self.current_time,
-                                                         dist=new_dist_v, pred=u)
-                  if inconsistency:
-                      print(f"    RPQ Inconsistency during decrease update for {v}! Node: {inconsistency}")
-                      # Need strategy here: e.g., re-run Dijkstra?
-                  else:
-                      print(f"    RPQ updated for vertex {v} with new distance {new_dist_v}.")
+    def check_potential_improvements(self, u, v):
+        """
+        Check if decreased edge weight enables better paths to other vertices.
+        """
+        # Check if this edge could be part of a better path to any vertex
+        for w in range(self.num_vertices):
+            if w == v:
+                continue
+            if self.pred[w] == v and self.dist[w] == self.dist[v] + self.graph[v][w]:
+                candidate_dist = self.dist[u] + self.graph[u][v] + self.graph[v][w]
+                if candidate_dist < self.dist[w]:
+                    print(f"Found potential improvement to {w} via {u}->{v}")
+                    self.propagate_improvement(w, candidate_dist, v)
 
-                  # NOTE: This simple update doesn't automatically propagate the change
-                  # to v's neighbors. A full solution would require re-running parts
-                  # of Dijkstra or using a more sophisticated update propagation.
+    def propagate_improvement(self, v, new_dist, predecessor):
+        """
+        Propagate a path improvement through the graph.
+        """
+        if new_dist >= self.dist[v]:        #base case
+            return
+        print(f"Improving path to {v}: {self.dist[v]} -> {new_dist}")
+        self.update_vertex(v, new_dist, predecessor)
 
-        # Case 2: Weight Increase (Potential for path invalidation)
-        elif new_weight > old_weight:
-             print(f"  Weight increased.")
-             # If the shortest path to v *used* the edge (u, v)
-             if self.pred[v] == u and self.dist[v] == self.dist[u] + old_weight:
-                  print(f"    Increased edge ({u},{v}) was part of shortest path to {v}.")
-                  # The current path to v is now potentially incorrect (cost is higher).
-                  # We need to find an alternative path.
+        # Relax all outgoing edges to propagate improvement
+        for w in range(self.num_vertices):
+            if self.graph[v][w] != float('inf') and v != w:
+                candidate_dist = new_dist + self.graph[v][w]
+                if candidate_dist < self.dist[w]:
+                    self.propagate_improvement(w, candidate_dist, v)
 
-                  # --- How RPQ *should* handle this (conceptually) ---
-                  # The existing entry for v (if inserted via u) in T_ins now represents
-                  # an old, possibly suboptimal path cost. Future FindMin operations,
-                  # when considering time > current_time, should automatically ignore
-                  # this path if a better alternative (inserted earlier or later) becomes
-                  # the minimum valid entry.
+    def find_affected_vertices(self, v):
+        """
+        Find all vertices whose shortest paths go through vertex v.
+        Returns a topologically sorted list from leaves back to v.
+        """
+        affected = set()
+        stack = [v]
+        
+        while stack:
+            current = stack.pop()
+            if current in affected:
+                continue
+            affected.add(current)
+            for w in range(self.num_vertices):
+                if self.pred[w] == current and w not in affected:
+                    stack.append(w)
+        
+        # Return in reverse order (leaves first) for proper recomputation
+        return sorted(affected, key=lambda x: -self.dist[x] if self.dist[x] != float('inf') else -float('inf'))
 
-                  # --- Actions needed? ---
-                  # 1. Invalidate the old path? Marking the T_ins node invalid might be too strong.
-                  #    Perhaps just update the distance estimate?
-                  # 2. Re-calculate dist[v]? This would involve finding the *new* best incoming edge.
-                  # 3. Add v back to RPQ? If its path needs re-evaluation.
+    def recompute_shortest_path(self, vertex):
+        """
+        Completely recompute shortest path to a vertex.
+        """
+        print(f"Recomputing shortest path to {vertex}")
+        
+        # Find best possible new distance
+        min_dist = float('inf')
+        best_pred = None
+        for u in range(self.num_vertices):
+            if self.graph[u][vertex] != float('inf') and u != vertex:
+                candidate_dist = self.dist[u] + self.graph[u][vertex]
+                if candidate_dist < min_dist:
+                    min_dist = candidate_dist
+                    best_pred = u
 
-                  # --- Simplified approach ---
-                  # For now, we don't explicitly modify the RPQ here for increases.
-                  # We rely on subsequent FindMin/DelMin operations to naturally find
-                  # the new correct path IF other path possibilities were already inserted
-                  # or if we re-run parts of Dijkstra.
-                  # A more robust solution might involve:
-                  #   a) Setting self.dist[v] = infinity, self.pred[v] = None
-                  #   b) Re-inserting v into RPQ if neighbors might provide a path.
-                  #   c) Or, triggering a limited Dijkstra-like propagation from v.
+        # Update the vertex
+        old_dist = self.dist[vertex]
+        self.update_vertex(vertex, min_dist, best_pred)
 
-                  # Let's try updating dist[v] and re-inserting it to trigger re-evaluation.
-                  print(f"    Invalidating path to {v}. Setting dist to Inf and re-evaluating.")
-                  # Find the node for v in RPQ that used u as predecessor (this requires better lookup)
-                  v_node = self.rpq.get_vertex_node(v) # Simple lookup
-                  if v_node and v_node.valid and v_node.value.get('pred') == u:
-                       print(f"    Marking existing RPQ node for {v} invalid (due to increase).")
-                       # Revoke the specific insert that represents the path through u
-                       # This is complex. For now, just mark the latest node invalid.
-                       v_node.valid = False # Mark it stale
+        # If distance changed, propagate to neighbors
+        if min_dist != old_dist:
+            for w in range(self.num_vertices):
+                if self.graph[vertex][w] != float('inf') and vertex != w:
+                    if self.pred[w] == vertex or (self.dist[w] == old_dist + self.graph[vertex][w] and old_dist != float('inf')):
+                        self.recompute_shortest_path(w)
 
-                  # Reset v's distance temporarily, assume it needs recalculation
-                  self.dist[v] = float('inf')
-                  self.pred[v] = None
+    def update_vertex(self, vertex, new_dist, predecessor):
+        """
+        Update vertex distance and predecessor, managing RPQ operations.
+        """
+        if new_dist == self.dist[vertex] and predecessor == self.pred[vertex]:
+            return
 
-                  # We need to add v back to RPQ potentially, but with what distance?
-                  # Maybe recalculate based on *other* neighbors?
-                  min_neighbor_dist = float('inf')
-                  best_neighbor_pred = None
-                  for neighbor in range(self.num_vertices):
-                       if self.graph[neighbor][v] != float('inf') and neighbor != v:
-                            if self.dist[neighbor] + self.graph[neighbor][v] < min_neighbor_dist:
-                                 min_neighbor_dist = self.dist[neighbor] + self.graph[neighbor][v]
-                                 best_neighbor_pred = neighbor
+        print(f"Updating vertex {vertex}: dist {self.dist[vertex]}->{new_dist}, pred {self.pred[vertex]}->{predecessor}")
 
-                  if min_neighbor_dist != float('inf'):
-                        print(f"    Found alternative path to {v} via {best_neighbor_pred} with cost {min_neighbor_dist}. Updating RPQ.")
-                        self.dist[v] = min_neighbor_dist
-                        self.pred[v] = best_neighbor_pred
-                        inconsistency = self.rpq.invoke_insert(vertex=v, time=self.current_time,
-                                                               dist=min_neighbor_dist, pred=best_neighbor_pred)
-                        if inconsistency:
-                             print(f"    RPQ Inconsistency during increase update for {v}! Node: {inconsistency}")
+        # Revoke any existing insertions
+        v_node = self.rpq.get_vertex_node(vertex, active_only=False)
+        if v_node:
+            self.rpq.revoke_insert(v_node.value['ins_time'])
 
+        # Revoke deletion if vertex was deleted
+        if vertex in self.deletion_times:
+            del_time = self.deletion_times[vertex]
+            self.rpq.revoke_del_min(del_time)
+            del self.deletion_times[vertex]
 
-                  # This recalculation is still local. A full update might require broader propagation.
+        # Update distance and predecessor
+        self.dist[vertex] = new_dist
+        self.pred[vertex] = predecessor
 
-        # Increment time after the update operation
-        self.current_time += 1
-        print(f"--- Update Finished. Current time: {self.current_time} ---")
-        # Optionally: Re-run parts of Dijkstra to propagate changes fully
-        # self.run_static_from_state() # A hypothetical function to continue Dijkstra
+        # Insert new value if distance is finite
+        if new_dist < float('inf'):
+            self.rpq.invoke_insert(vertex=vertex, time=self.current_time,
+                                 dist=new_dist, pred=predecessor)
+            self.current_time += 1
+
+    def relax_edge(self, u, v):
+        """Standard edge relaxation."""
+        new_dist = self.dist[u] + self.graph[u][v]
+        if new_dist < self.dist[v]:
+            self.update_vertex(v, new_dist, u)
+            return True
+        return False
 
 # --- Example Usage ---
 if __name__ == "__main__":
@@ -1068,19 +972,57 @@ if __name__ == "__main__":
     # Add edges with their initial weights.
     # Using float('inf') for non-edges is handled by the class init.
     print("Defining initial graph edges...")
-    dd.graph[0][1] = 2  # O-A
-    dd.graph[0][2] = 5  # O-B
-    dd.graph[1][6] = 12 # A-F
-    dd.graph[1][2] = 7  # A-B
-    dd.graph[1][3] = 4  # A-C
-    dd.graph[2][4] = 1  # B-D (Initial weight is 1 before t=5 update)
-    dd.graph[2][5] = 3  # B-E
-    dd.graph[3][4] = 4  # C-D
-    dd.graph[3][7] = 7  # C-T
-    dd.graph[4][5] = 4  # D-E
-    dd.graph[4][7] = 3  # D-T
-    # Edge E-T weight seems missing in the figure text/diagram, let's assume 5
-    dd.graph[5][7] = 5  # E-T
+    # dd.graph[0][1] = 2  # O-A
+    # dd.graph[0][2] = 5  # O-B
+    # dd.graph[0][3] = 4  # O-B
+    # dd.graph[1][6] = 12 # A-F
+    # dd.graph[1][2] = 2  # A-B
+    # dd.graph[1][3] = 4  # A-C
+    # dd.graph[2][4] = 1  # B-D (Initial weight is 1 before t=5 update)
+    # dd.graph[2][5] = 3  # B-E
+    # dd.graph[3][4] = 4  # C-D
+    # dd.graph[3][7] = 7  # C-T
+    # dd.graph[4][5] = 4  # D-E
+    # dd.graph[4][7] = 3  # D-T
+    # # Edge E-T weight seems missing in the figure text/diagram, let's assume 5
+    # dd.graph[5][7] = 5  # E-T
+    dd.graph[0][1] = 2   # O-A
+    dd.graph[0][2] = 5   # O-B
+    dd.graph[0][3] = 4   # O-C
+
+    dd.graph[1][0] = 2   # A-O
+    dd.graph[1][2] = 2   # A-B
+    dd.graph[1][4] = 7   # A-D
+    dd.graph[1][6] = 12  # A-F
+
+    dd.graph[2][0] = 5   # B-O
+    dd.graph[2][1] = 2   # B-A
+    dd.graph[2][3] = 1   # B-C
+    dd.graph[2][5] = 3   # B-E
+    dd.graph[2][4] = 4   # B-D
+
+    dd.graph[3][0] = 4   # C-O
+    dd.graph[3][2] = 1   # C-B
+    dd.graph[3][5] = 4   # C-E
+
+    dd.graph[5][3] = 4   # E-C
+    dd.graph[5][2] = 3   # E-B
+    dd.graph[5][4] = 4   # E-D
+    dd.graph[5][7] = 7   # E-T
+
+    dd.graph[4][1] = 7   # D-A
+    dd.graph[4][2] = 4   # D-B
+    dd.graph[4][5] = 4   # D-E
+    # dd.graph[4][6] = 5   # D-F
+    dd.graph[4][7] = 5   # D-T
+
+    dd.graph[6][1] = 12  # F-A
+    # dd.graph[6][4] = 5   # F-D
+    dd.graph[6][7] = 3   # F-T
+
+    dd.graph[7][4] = 4   # T-D
+    dd.graph[7][5] = 7   # T-E
+    dd.graph[7][6] = 3   # T-F
 
     # Optional: Make graph undirected if the example flow implies it
     print("Making graph undirected for example consistency...")
@@ -1120,8 +1062,8 @@ if __name__ == "__main__":
 
     # Update 2: At time t=7 (in paper's example), edge O-B weight increases to 7
     # (O=0, B=2)
-    print(f"\nUpdate 2 (Internal Time: {dd.current_time}): Increasing edge (0, 2) weight to 7")
-    dd.update_edge(0, 2, 7)
+    print(f"\nUpdate 2 (Internal Time: {dd.current_time}): Increasing edge (0, 1) weight to 7")
+    dd.update_edge(0, 1, 7)
     print(f" State after Update 2:")
     print(f"  Distances: {dd.dist}")
     print(f"  Predecessors: {dd.pred}")
@@ -1135,6 +1077,11 @@ if __name__ == "__main__":
     print(f"  Distances: {dd.dist}")
     print(f"  Predecessors: {dd.pred}")
 
+    print(f"\nUpdate 4 (Internal Time: {dd.current_time}): Decreasing edge (0, 3) weight to 1")
+    dd.update_edge(0, 3, 1)
+    print(f" State after Update 3:")
+    print(f"  Distances: {dd.dist}")
+    print(f"  Predecessors: {dd.pred}")
 
     # --- Final State ---
     # The distances/predecessors shown after updates reflect the immediate changes
@@ -1163,3 +1110,642 @@ if __name__ == "__main__":
     # Example: Finding min at the very end
     final_min_val = dd.rpq.find_min(dd.current_time)
     print(f"\nFindMin at final time {dd.current_time}: {final_min_val}")
+
+
+
+
+
+# extra classes
+# # --- Dynamic Dijkstra Algorithm ---
+# class DynamicDijkstra:
+#     def __init__(self, num_vertices):
+#         self.num_vertices = num_vertices
+#         # Using adjacency matrix as per paper's suggestion for simplicity
+#         # For large sparse graphs, adjacency list + dict lookup is better
+#         self.graph = [[float('inf')] * num_vertices for _ in range(num_vertices)]
+#         for i in range(num_vertices):
+#             self.graph[i][i] = 0 # Distance to self is 0
+
+#         self.dist = [float('inf')] * num_vertices
+#         self.pred = [None] * num_vertices
+#         self.rpq = RPQ()
+#         self.current_time = 0 # Global time counter
+
+#     def initialize(self, source):
+#         """Initializes distances and RPQ for the source vertex."""
+#         self.dist = [float('inf')] * self.num_vertices
+#         self.pred = [None] * self.num_vertices
+#         self.rpq = RPQ() # Reset RPQ
+
+#         self.dist[source] = 0
+#         self.current_time = 0
+#         # Insert source into RPQ at time 0
+#         inconsistency = self.rpq.invoke_insert(vertex=source, time=self.current_time,
+#                                                dist=0, pred=None)
+#         if inconsistency:
+#              print(f"Init Error: RPQ inconsistency: {inconsistency}") # Should not happen here
+
+#         self.current_time += 1 # Increment time after initial setup
+
+
+#     def run_static(self):
+#         """Runs Dijkstra using the RPQ until the queue is 'empty' for the current state."""
+#         print("\n--- Running Static Dijkstra using RPQ ---")
+#         processed_count = 0
+#         while processed_count < self.num_vertices:
+#             # Find the minimum element *at the current time*
+#             min_val = self.rpq.find_min(self.current_time)
+#             print(f"Time {self.current_time}: FindMin -> {min_val}")
+
+#             if min_val is None:
+#                  print(f"Time {self.current_time}: RPQ empty or no valid nodes. Stopping.")
+#                  break # No more reachable vertices
+
+#             # Perform the Del_Min operation for the found element's vertex at current time
+#             deleted_val = self.rpq.invoke_del_min(self.current_time)
+#             # print(f"Time {self.current_time}: InvokeDelMin -> {deleted_val}")
+
+
+#             if deleted_val is None:
+#                  # This might happen if find_min found something, but intervening
+#                  # operations (if any were allowed) made it invalid before del_min.
+#                  # Or simply if the queue became empty between find and delete.
+#                  print(f"Time {self.current_time}: Del_Min returned None. Continuing.")
+#                  self.current_time +=1 # Still advance time
+#                  continue
+
+
+#             u = deleted_val['vertex']
+#             u_dist = deleted_val['dist']
+
+#             # Check if we already processed a shorter path to u
+#             # Note: In classic Dijkstra, this check isn't needed because we always
+#             # extract the absolute minimum. With RPQ, it's safer to check.
+#             if u_dist > self.dist[u]:
+#                  # print(f"Time {self.current_time}: Stale entry for {u} ({u_dist} > {self.dist[u]}). Skipping.")
+#                  self.current_time +=1
+#                  continue
+
+#             processed_count += 1
+#             # print(f"Time {self.current_time}: Processing vertex {u} with dist {u_dist}")
+
+#             # Relax neighbors
+#             for v in range(self.num_vertices):
+#                 edge_weight = self.graph[u][v]
+#                 if edge_weight != float('inf') and u != v:
+#                     new_dist_v = self.dist[u] + edge_weight
+#                     # print(f"  Checking neighbor {v}: Current dist {self.dist[v]}, New potential dist {new_dist_v}")
+#                     if new_dist_v < self.dist[v]:
+#                         # print(f"    Relaxation: Found shorter path to {v} via {u}. Dist {new_dist_v}")
+#                         self.dist[v] = new_dist_v
+#                         self.pred[v] = u
+
+#                         # Update RPQ: Insert the new path info for v at current time
+#                         # We might need to revoke old inserts for v first if they exist and are now suboptimal.
+#                         # Simple approach: Just insert. RPQ's FindMin should handle finding the true minimum later.
+#                         # A better approach would use UpdateKey if RPQ supported it, or Revoke+Insert.
+#                         # For now, just InvokeInsert:
+#                         inconsistency = self.rpq.invoke_insert(vertex=v, time=self.current_time,
+#                                                                dist=new_dist_v, pred=u)
+#                         if inconsistency:
+#                              # Handle inconsistency - e.g., log, try recovery, or fail
+#                             print(f"RPQ Inconsistency during relaxation for {v}! Node: {inconsistency}. Halting Relaxation Loop for {u}.")
+#                             # This might require complex handling - for now, just log and continue time step
+#                             break # Stop relaxing for this u
+
+
+#             self.current_time += 1 # Increment time after processing a vertex
+
+#         print("--- Static Dijkstra Finished ---")
+#         print(f"Final Distances: {self.dist}")
+#         print(f"Final Predecessors: {self.pred}")
+
+
+#     def update_edge(self, u, v, new_weight):
+#         """
+#         Handles dynamic edge weight updates using the D_Dij logic sketch.
+#         NOTE: This implementation is a simplified interpretation of the paper's
+#               complex retroactive logic. Full retroactivity is hard. This focuses
+#               on adjusting the RPQ based on the change.
+#         """
+#         print(f"\n--- Updating Edge ({u}, {v}) to weight {new_weight} at time {self.current_time} ---")
+#         old_weight = self.graph[u][v]
+#         if old_weight == new_weight:
+#             print("  No weight change. Skipping.")
+#             return
+
+#         self.graph[u][v] = new_weight
+#         # self.graph[v][u] = new_weight # Assuming undirected for simplicity if needed
+
+#         # --- Simplified D_Dij Logic ---
+#         # The paper's logic is intricate, involving searching T_ins, checking predecessors,
+#         # and potentially moving back in time. A full implementation is complex.
+#         # Here's a more direct, forward-looking approach inspired by relaxation:
+
+#         # Case 1: Weight Decrease (Potential for shorter paths)
+#         if new_weight < old_weight:
+#              print(f"  Weight decreased. Potential shorter path from {u} to {v}.")
+#              # If the path through u *might* now be better for v
+#              new_dist_v = self.dist[u] + new_weight
+#              if new_dist_v < self.dist[v]:
+#                   print(f"    Found immediately shorter path to {v} ({new_dist_v} < {self.dist[v]}). Updating RPQ.")
+#                   # Update distance and predecessor estimation
+#                   self.dist[v] = new_dist_v
+#                   self.pred[v] = u
+#                   # Update RPQ: Add this new, better path possibility.
+#                   # Again, ideally use UpdateKey or Revoke+Insert. Using InvokeInsert for now.
+#                   inconsistency = self.rpq.invoke_insert(vertex=v, time=self.current_time,
+#                                                          dist=new_dist_v, pred=u)
+#                   if inconsistency:
+#                       print(f"    RPQ Inconsistency during decrease update for {v}! Node: {inconsistency}")
+#                       # Need strategy here: e.g., re-run Dijkstra?
+#                   else:
+#                       print(f"    RPQ updated for vertex {v} with new distance {new_dist_v}.")
+
+#                   # NOTE: This simple update doesn't automatically propagate the change
+#                   # to v's neighbors. A full solution would require re-running parts
+#                   # of Dijkstra or using a more sophisticated update propagation.
+
+#         # Case 2: Weight Increase (Potential for path invalidation)
+#         elif new_weight > old_weight:
+#              print(f"  Weight increased.")
+#              # If the shortest path to v *used* the edge (u, v)
+#              if self.pred[v] == u and self.dist[v] == self.dist[u] + old_weight:
+#                   print(f"    Increased edge ({u},{v}) was part of shortest path to {v}.")
+#                   # The current path to v is now potentially incorrect (cost is higher).
+#                   # We need to find an alternative path.
+
+#                   # --- How RPQ *should* handle this (conceptually) ---
+#                   # The existing entry for v (if inserted via u) in T_ins now represents
+#                   # an old, possibly suboptimal path cost. Future FindMin operations,
+#                   # when considering time > current_time, should automatically ignore
+#                   # this path if a better alternative (inserted earlier or later) becomes
+#                   # the minimum valid entry.
+
+#                   # --- Actions needed? ---
+#                   # 1. Invalidate the old path? Marking the T_ins node invalid might be too strong.
+#                   #    Perhaps just update the distance estimate?
+#                   # 2. Re-calculate dist[v]? This would involve finding the *new* best incoming edge.
+#                   # 3. Add v back to RPQ? If its path needs re-evaluation.
+
+#                   # --- Simplified approach ---
+#                   # For now, we don't explicitly modify the RPQ here for increases.
+#                   # We rely on subsequent FindMin/DelMin operations to naturally find
+#                   # the new correct path IF other path possibilities were already inserted
+#                   # or if we re-run parts of Dijkstra.
+#                   # A more robust solution might involve:
+#                   #   a) Setting self.dist[v] = infinity, self.pred[v] = None
+#                   #   b) Re-inserting v into RPQ if neighbors might provide a path.
+#                   #   c) Or, triggering a limited Dijkstra-like propagation from v.
+
+#                   # Let's try updating dist[v] and re-inserting it to trigger re-evaluation.
+#                   print(f"    Invalidating path to {v}. Setting dist to Inf and re-evaluating.")
+#                   # Find the node for v in RPQ that used u as predecessor (this requires better lookup)
+#                   v_node = self.rpq.get_vertex_node(v) # Simple lookup
+#                   if v_node and v_node.valid and v_node.value.get('pred') == u:
+#                        print(f"    Marking existing RPQ node for {v} invalid (due to increase).")
+#                        # Revoke the specific insert that represents the path through u
+#                        # This is complex. For now, just mark the latest node invalid.
+#                        v_node.valid = False # Mark it stale
+
+#                   # Reset v's distance temporarily, assume it needs recalculation
+#                   self.dist[v] = float('inf')
+#                   self.pred[v] = None
+
+#                   # We need to add v back to RPQ potentially, but with what distance?
+#                   # Maybe recalculate based on *other* neighbors?
+#                   min_neighbor_dist = float('inf')
+#                   best_neighbor_pred = None
+#                   for neighbor in range(self.num_vertices):
+#                        if self.graph[neighbor][v] != float('inf') and neighbor != v:
+#                             if self.dist[neighbor] + self.graph[neighbor][v] < min_neighbor_dist:
+#                                  min_neighbor_dist = self.dist[neighbor] + self.graph[neighbor][v]
+#                                  best_neighbor_pred = neighbor
+
+#                   if min_neighbor_dist != float('inf'):
+#                         print(f"    Found alternative path to {v} via {best_neighbor_pred} with cost {min_neighbor_dist}. Updating RPQ.")
+#                         self.dist[v] = min_neighbor_dist
+#                         self.pred[v] = best_neighbor_pred
+#                         inconsistency = self.rpq.invoke_insert(vertex=v, time=self.current_time,
+#                                                                dist=min_neighbor_dist, pred=best_neighbor_pred)
+#                         if inconsistency:
+#                              print(f"    RPQ Inconsistency during increase update for {v}! Node: {inconsistency}")
+
+
+#                   # This recalculation is still local. A full update might require broader propagation.
+
+#         # Increment time after the update operation
+#         self.current_time += 1
+#         print(f"--- Update Finished. Current time: {self.current_time} ---")
+#         # Optionally: Re-run parts of Dijkstra to propagate changes fully
+#         # self.run_static_from_state() # A hypothetical function to continue Dijkstra
+
+
+# class DynamicDijkstra:
+#     def __init__(self, num_vertices):
+#         self.num_vertices = num_vertices
+#         self.graph = [[float('inf')] * num_vertices for _ in range(num_vertices)]
+#         for i in range(num_vertices):
+#             self.graph[i][i] = 0
+#         self.dist = [float('inf')] * num_vertices
+#         self.pred = [None] * num_vertices
+#         self.rpq = RPQ()
+#         self.current_time = 0
+#         # Track deletion times for vertices to support revoke_del_min
+#         self.deletion_times = {}  # {vertex: deletion_time}
+
+#     def initialize(self, source):
+#         """Initializes distances and RPQ for the source vertex."""
+#         self.dist = [float('inf')] * self.num_vertices
+#         self.pred = [None] * self.num_vertices
+#         self.rpq = RPQ()
+#         self.deletion_times = {}
+#         self.current_time = 0
+        
+#         self.dist[source] = 0
+#         inconsistency = self.rpq.invoke_insert(vertex=source, time=self.current_time,
+#                                              dist=0, pred=None)
+#         if inconsistency:
+#             print(f"Init Error: RPQ inconsistency: {inconsistency}")
+#         self.current_time += 1
+
+#     def run_static(self):
+#         """Standard Dijkstra execution using RPQ."""
+#         processed = set()
+#         while len(processed) < self.num_vertices:
+#             min_val = self.rpq.find_min(self.current_time)
+#             if min_val is None:
+#                 break
+
+#             deleted_val = self.rpq.invoke_del_min(self.current_time)
+#             if deleted_val is None:
+#                 self.current_time += 1
+#                 continue
+
+#             u = deleted_val['vertex']
+#             self.deletion_times[u] = self.current_time  # Track deletion time
+
+#             if deleted_val['dist'] > self.dist[u]:
+#                 self.current_time += 1
+#                 continue
+
+#             processed.add(u)
+#             for v in range(self.num_vertices):
+#                 if self.graph[u][v] != float('inf') and u != v:
+#                     self.relax_edge(u, v)
+#             self.current_time += 1
+
+#     def update_edge(self, u, v, new_weight):
+#         """
+#         Updates edge weight and adjusts shortest paths using revoke_del_min when needed.
+#         """
+#         print(f"\nUpdating edge ({u}, {v}) to {new_weight} at time {self.current_time}")
+#         old_weight = self.graph[u][v]
+#         if old_weight == new_weight:
+#             return
+
+#         delta = new_weight - old_weight
+#         self.graph[u][v] = new_weight
+
+#         # Step 1: Search T_ins for the head vertex (v)
+#         v_node = self.rpq.get_vertex_node(v, active_only=False)
+        
+#         if v_node is None:
+#             print(f"No entries found for vertex {v} in RPQ")
+#             return
+
+#         # Case 1: Weight decreased - can only improve paths
+#         if delta < 0:
+#             print("Edge weight decreased - checking for path improvements")
+#             if self.pred[v] == u:
+#                 new_dist = self.dist[u] + new_weight
+#                 if new_dist < self.dist[v]:
+#                     self.update_vertex_distance(v, new_dist, u)
+#             return
+
+#         # Case 2: Weight increased - may need to revoke deletions
+#         print("Edge weight increased - checking for invalidated paths")
+#         if self.pred[v] == u and abs(self.dist[v] - (self.dist[u] + old_weight)) < 1e-9:
+#             print(f"Edge was part of shortest path to {v}")
+
+#             # If vertex was deleted, we may need to revoke that deletion
+#             if v in self.deletion_times:
+#                 del_time = self.deletion_times[v]
+#                 print(f"Vertex {v} was deleted at time {del_time} - attempting to revoke")
+#                 inconsistency = self.rpq.revoke_del_min(del_time)
+#                 if inconsistency:
+#                     print(f"Warning: Inconsistency found when revoking del_min: {inconsistency}")
+#                 del self.deletion_times[v]  # Remove from tracking
+
+#             # Update distance and reinsert
+#             new_dist = self.dist[u] + new_weight
+#             self.update_vertex_distance(v, new_dist, u)
+
+#             # Also need to check v's neighbors since its distance changed
+#             for w in range(self.num_vertices):
+#                 if self.graph[v][w] != float('inf') and v != w:
+#                     if self.pred[w] == v:
+#                         print(f"Propagating change to neighbor {w}")
+#                         self.update_vertex_distance(w, self.dist[v] + self.graph[v][w], v)
+
+#     def update_vertex_distance(self, vertex, new_dist, predecessor):
+#         """Helper to update a vertex's distance and update RPQ."""
+#         print(f"Updating vertex {vertex} to dist {new_dist} via {predecessor}")
+#         self.dist[vertex] = new_dist
+#         self.pred[vertex] = predecessor
+
+#         # Revoke any existing insertions for this vertex
+#         v_node = self.rpq.get_vertex_node(vertex, active_only=False)
+#         if v_node:
+#             print(f"Revoking existing insertion at time {v_node.value['ins_time']}")
+#             self.rpq.revoke_insert(v_node.value['ins_time'])
+
+#         # Insert new distance
+#         print(f"Inserting new distance at time {self.current_time}")
+#         inconsistency = self.rpq.invoke_insert(vertex=vertex, time=self.current_time,
+#                                              dist=new_dist, pred=predecessor)
+#         if inconsistency:
+#             print(f"RPQ inconsistency during update: {inconsistency}")
+#         self.current_time += 1
+
+#     def relax_edge(self, u, v):
+#         """Relaxes edge (u, v) and updates RPQ if needed."""
+#         new_dist = self.dist[u] + self.graph[u][v]
+#         if new_dist < self.dist[v]:
+#             print(f"Relaxing edge ({u}, {v}) with new dist {new_dist}")
+#             self.update_vertex_distance(v, new_dist, u)
+#             return True
+#         return False
+# class DynamicDijkstra:
+#     def __init__(self, num_vertices):
+#         self.num_vertices = num_vertices
+#         self.graph = [[float('inf')] * num_vertices for _ in range(num_vertices)]
+#         for i in range(num_vertices):
+#             self.graph[i][i] = 0  # Distance to self is 0
+#         self.dist = [float('inf')] * num_vertices
+#         self.pred = [None] * num_vertices
+#         self.rpq = RPQ()
+#         self.current_time = 0
+#         self.deletion_times = {}  # Track when vertices were deleted
+
+#     def initialize(self, source):
+#         """Initialize the algorithm with a source vertex."""
+#         self.dist = [float('inf')] * self.num_vertices
+#         self.pred = [None] * self.num_vertices
+#         self.rpq = RPQ()
+#         self.deletion_times = {}
+#         self.current_time = 0
+        
+#         self.dist[source] = 0
+#         self.rpq.invoke_insert(vertex=source, time=self.current_time,
+#                               dist=0, pred=None)
+#         self.current_time += 1
+
+#     def run_static(self):
+#         """Run standard Dijkstra using the RPQ."""
+#         processed = set()
+#         while len(processed) < self.num_vertices:
+#             min_val = self.rpq.find_min(self.current_time)
+#             if min_val is None:
+#                 break
+
+#             deleted_val = self.rpq.invoke_del_min(self.current_time)
+#             if deleted_val is None:
+#                 self.current_time += 1
+#                 continue
+
+#             u = deleted_val['vertex']
+#             self.deletion_times[u] = self.current_time  # Track deletion time
+
+#             if deleted_val['dist'] > self.dist[u]:
+#                 self.current_time += 1
+#                 continue
+
+#             processed.add(u)
+#             for v in range(self.num_vertices):
+#                 if self.graph[u][v] != float('inf') and u != v:
+#                     self.relax_edge(u, v)
+#             self.current_time += 1
+
+#     def update_edge(self, u, v, new_weight):
+#         """
+#         Update edge weight and properly recompute affected shortest paths.
+#         Implements the full D_Dij algorithm with proper recomputation.
+#         """
+#         old_weight = self.graph[u][v]
+#         if old_weight == new_weight:
+#             return
+
+#         self.graph[u][v] = new_weight
+#         delta = new_weight - old_weight
+
+#         # Case 1: Weight decreased - may create new shorter paths
+#         if delta < 0:
+#             if self.dist[u] + new_weight < self.dist[v]:
+#                 self.update_vertex(v, self.dist[u] + new_weight, u)
+#             return
+
+#         # Case 2: Weight increased - may invalidate existing paths
+#         if self.pred[v] == u and abs(self.dist[v] - (self.dist[u] + old_weight)) < 1e-9:
+#             # The increased edge was part of the shortest path to v
+#             print(f"Edge ({u},{v}) was part of shortest path to {v}")
+            
+#             # If v was deleted, we need to revoke that deletion
+#             if v in self.deletion_times:
+#                 del_time = self.deletion_times[v]
+#                 print(f"Revoking deletion of {v} at time {del_time}")
+#                 inconsistency = self.rpq.revoke_del_min(del_time)
+#                 if inconsistency:
+#                     print(f"Warning: Inconsistency when revoking: {inconsistency}")
+#                 del self.deletion_times[v]
+
+#             # Now recompute shortest path to v
+#             self.recompute_shortest_path(v)
+
+#     def recompute_shortest_path(self, vertex):
+#         """
+#         Recompute shortest path to a vertex after its distance may have become invalid.
+#         """
+#         print(f"Recomputing shortest path to {vertex}")
+        
+#         # First find the best possible new distance
+#         min_dist = float('inf')
+#         best_pred = None
+#         for u in range(self.num_vertices):
+#             if self.graph[u][vertex] != float('inf') and u != vertex:
+#                 candidate_dist = self.dist[u] + self.graph[u][vertex]
+#                 if candidate_dist < min_dist:
+#                     print(f"potential parent: {u} with dist {self.dist[u]} which will be {self.dist[u]} + {self.graph[u][vertex]}")
+#                     min_dist = candidate_dist
+#                     best_pred = u
+
+#         # If we found a valid path
+#         if min_dist < float('inf'):
+#             self.update_vertex(vertex, min_dist, best_pred)
+#         else:
+#             # No path exists anymore
+#             self.update_vertex(vertex, float('inf'), None)
+
+#         # Check if we need to propagate changes to neighbors
+#         for w in range(self.num_vertices):
+#             if self.graph[vertex][w] != float('inf') and vertex != w:
+#                 if self.pred[w] == vertex:
+#                     self.recompute_shortest_path(w)
+
+#     def update_vertex(self, vertex, new_dist, predecessor):
+#         """
+#         Update a vertex's distance and predecessor, and manage RPQ operations.
+#         """
+#         if new_dist == self.dist[vertex] and predecessor == self.pred[vertex]:
+#             return  # No change needed
+
+#         print(f"Updating vertex {vertex}: dist {self.dist[vertex]}->{new_dist}, pred {self.pred[vertex]}->{predecessor}")
+
+#         # Revoke any existing insertions for this vertex
+#         v_node = self.rpq.get_vertex_node(vertex, active_only=False)
+#         if v_node:
+#             self.rpq.revoke_insert(v_node.value['ins_time'])
+
+#         # Update distance and predecessor
+#         self.dist[vertex] = new_dist
+#         self.pred[vertex] = predecessor
+
+#         # If vertex was deleted, revoke that deletion
+#         if vertex in self.deletion_times:
+#             del_time = self.deletion_times[vertex]
+#             self.rpq.revoke_del_min(del_time)
+#             del self.deletion_times[vertex]
+
+#         # Insert new distance if finite
+#         if new_dist < float('inf'):
+#             self.rpq.invoke_insert(vertex=vertex, time=self.current_time,
+#                                  dist=new_dist, pred=predecessor)
+#             self.current_time += 1
+
+#     def relax_edge(self, u, v):
+#         """Relax edge (u, v) and update RPQ if distance improves."""
+#         new_dist = self.dist[u] + self.graph[u][v]
+#         if new_dist < self.dist[v]:
+#             self.update_vertex(v, new_dist, u)
+#             return True
+#         return False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # def invoke_insert(self, vertex, time, dist, pred):
+    #     """
+    #     Performs Insert(x, t) operation.
+    #     Args:
+    #         vertex: The vertex being inserted.
+    #         time: The insertion time.
+    #         dist: Estimated distance.
+    #         pred: Predecessor vertex.
+    #     Returns:
+    #         The T_d_m node of the first inconsistent Del_Min operation (if any), otherwise None.
+    #     """
+    #     # 1. Check for future inconsistencies in T_d_m
+    #     # Find the smallest deletion time >= t
+    #     inconsistent_del_node = self.T_d_m.search_ge(time)
+    #     # Use T_d_m's TNULL for comparison
+    #     if inconsistent_del_node != self.T_d_m.TNULL:
+    #         # print(f"RPQ Warn: Inserting ({vertex},{time},{dist}) conflicts with future Del_Min at {inconsistent_del_node.key}")
+    #         return inconsistent_del_node # Return the node representing the inconsistent delete
+
+    #     # 2. Perform the insertion in T_ins
+    #     value_dict = {'vertex': vertex, 'ins_time': time, 'dist': dist, 'pred': pred, 'del_time': None}
+    #     new_node = self.T_ins.insert(value_dict)
+    #     self._add_vertex_node(vertex, new_node)
+    #     # print(f"RPQ Insert: {value_dict} -> Node {new_node}")
+    #     return None # No inconsistency found
+    # def invoke_del_min(self, time):
+    #     """
+    #     Performs Del_Min(t) operation.
+    #     Args:
+    #         time: The time at which Del_Min is invoked.
+    #     Returns:
+    #         The value dictionary {'vertex': ..., 'dist': ...} of the deleted element, or None if PQ is empty or becomes inconsistent.
+    #     Raises:
+    #         ValueError: If the operation causes inconsistency with a future operation.
+    #     """
+    #     # Check for future inconsistencies (e.g., another operation at the exact same time)
+    #     # This simple check might need refinement based on exact tie-breaking rules.
+    #     # A stricter check might look for any operation >= time.
+    #     future_op_node = self.T_d_m.search_ge(time)
+    #     # Use T_d_m's TNULL for comparison
+    #     if future_op_node != self.T_d_m.TNULL and future_op_node.key == time:
+    #          raise ValueError(f"invoke_del_min({time}) conflicts with existing operation at the same time.")
+
+    #     # 1. Find the latest Del_Min operation *before* time `t`
+    #     pred_del_node = self.T_d_m.search_le(time - 1e-9) # Search for max key < time
+
+    #     # Use T_ins's TNULL for nodes originating from T_ins
+    #     node_to_delete = self.T_ins.TNULL
+    #     # Use T_d_m's TNULL for nodes originating from T_d_m
+    #     if pred_del_node == self.T_d_m.TNULL:
+    #         # No previous deletions, find the overall minimum valid node in T_ins
+    #         node_to_delete = self.T_ins.find_min_valid()
+    #         # print(f"InvokeDelMin({time}): No prev delete. Min valid in T_ins: {node_to_delete}")
+    #     else:
+    #         # Find the minimum valid node in T_ins *strictly greater* than the previously deleted key
+    #         prev_deleted_ins_node = pred_del_node.t_ins_link
+    #         if prev_deleted_ins_node is None:
+    #              # This case should ideally not happen if links are maintained correctly
+    #              print(f"RPQ Error: T_d_m node at {pred_del_node.key} has no T_ins link!")
+    #              node_to_delete = self.T_ins.find_min_valid() # Fallback: find overall minimum
+    #         # Use T_ins's TNULL when checking the linked node
+    #         elif prev_deleted_ins_node == self.T_ins.TNULL:
+    #             print(f"RPQ Error: T_d_m node at {pred_del_node.key} links to T_ins TNULL!")
+    #             node_to_delete = self.T_ins.find_min_valid() # Fallback
+    #         else:
+    #             threshold_key = prev_deleted_ins_node.key
+    #             # print(f"InvokeDelMin({time}): Prev delete at {pred_del_node.key}, threshold key {threshold_key}")
+    #             node_to_delete = self.T_ins.find_min_valid_greater_than(threshold_key)
+    #             # print(f"InvokeDelMin({time}): Min valid > threshold: {node_to_delete}")
+
+
+    #     # Use T_ins's TNULL for comparison
+    #     if node_to_delete == self.T_ins.TNULL:
+    #         # print(f"RPQ Warn: invoke_del_min({time}) - No valid element found to delete.")
+    #         return None # Priority queue effectively empty at this point
+
+    #     # 2. Mark the T_ins node as invalid
+    #     node_to_delete.valid = False
+    #     # print(f"RPQ DelMin: Marking T_ins node invalid: {node_to_delete}")
+
+
+    #     # 3. Insert a record into T_d_m
+    #     del_value_dict = {'del_time': time, 'vertex': node_to_delete.value['vertex']} # Store minimal info needed
+    #     del_node = self.T_d_m.insert(del_value_dict)
+    #     # print(f"RPQ DelMin: Inserted into T_d_m: {del_node}")
+
+
+    #     # 4. Establish links
+    #     node_to_delete.t_dm_link = del_node
+    #     del_node.t_ins_link = node_to_delete
+
+    #     # Return the value of the deleted element
+    #     return node_to_delete.value.copy() # Return a copy
+

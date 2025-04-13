@@ -233,24 +233,27 @@ def find_min_T_ins(T_ins):
 
 
 T_dm = RedBlackTree()
-T_dm.insert('T_dm',{'vertex':'A','ins_time': 4, 'del_time': 6, 'value': 1})
-T_dm.insert('T_dm',{'vertex':'A','ins_time': 5, 'del_time': 7, 'value': 4})
+T_dm.insert('T_dm',{'vertex':'A','ins_time': 4, 'del_time': 6, 'dist': 1})
+T_dm.insert('T_dm',{'vertex':'A','ins_time': 5, 'del_time': 7, 'dist': 4})
 print(T_dm.queue[0].value)
 res  = Search_element_del_before_t_T_dm(T_dm,6)
-print(res)
+if res:
+    print(res[0].value)
+
 class RetroactivePriorityQueue:
     def __init__(self):
         self.T_ins = RedBlackTree()  # Insertion tree
         self.T_d_m = RedBlackTree()  # Deletion tree
         self.time = 0  # Current time step
 
-    def invoke_insert(self, x):
+    def invoke_insert(self, vertex, dist, pred):
         self.time += 1
-        self.Tins.insert('T_ins',x)
+        # self.Tins.insert('T_ins',x)
         P = Search_Min_T_dm_after_t(self.T_d_m, self.time)
         if P:
-            return P
-        return None
+            return P #send inconsistencies
+        self.T_ins.insert({'vertex':vertex,'ins_time': self.time, 'dist':dist, 'pred':pred, 'del_time': None, 'valid': True})
+        return None #no inconsistencies
         # # x ={'vertex': ver,'ins_time':ins_time, 'dist': dist, 'pred': pred, 'del_time': del_time, 'valid':valid} 
         # # node = Node(ver=vertex, ins_time=self.time, dist=dist, pred=pred, del_time=None, valid=True)  # Create Node        self.time += 1
         # self.Tins.insert('T_ins', t)
@@ -261,15 +264,19 @@ class RetroactivePriorityQueue:
         P = Search_element_del_before_t_T_dm(self.T_d_m, self.time)
         if P is None: 
             N = find_min_T_ins(self.T_ins)
-            return N
+            node_to_del = N
             # self.Tins.delete(min_item[0])       #passing key
             # node = Node(ver=min_item[0], ins_time=min_item[1][0], dist=min_item[1][1], pred=min_item[1][1], del_time=self.time, valid=True)  # Create Node        self.time += 1
             # self.Td_m.insert(min_item[0], node)
             # return min_item
         else:
             K = P.value
-            return Search_element_dist_gt_kprime_T_Ins(K['dist'])
-
+            node_to_del = Search_element_dist_gt_kprime_T_Ins(K['dist'])
+        node_to_del.value['valid'] = False
+        del_node_vals = node_to_del.value
+        del_node_vals['del_time'] = self.time
+        self.T_d_m.insert('T_dm',del_node_vals)
+        return del_node_vals.copy()
 
         # return None
 
