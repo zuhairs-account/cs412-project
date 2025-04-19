@@ -148,33 +148,37 @@ class DynamicDijkstra:
 
     def process_rpq(self):
         processed = set()
-        while len(processed) < self.num_vertices:
+        while True:
             deleted_val = self.rpq.invoke_del_min(self.current_time)
             if not deleted_val:
-                self.current_time += 1
+                print(f"[{self.current_time}] RPQ is empty. Ending Dijkstra.")
                 break
             u = deleted_val['vertex']
+            dist_u = deleted_val['dist']
+            print(f"[{self.current_time}] Popped node {u} with dist = {dist_u}")
             if u in processed:
+                print(f"[{self.current_time}] Node {u} already processed. Skipping.")
+                self.current_time += 1
+                continue
+            if dist_u != self.dist[u]:            #popped distance is not the current best, skip it
+                print(f"[{self.current_time}] Outdated distance for node {u} (expected {self.dist[u]}, got {dist_u}). Skipping.")
                 self.current_time += 1
                 continue
             processed.add(u)
             self.deletion_times[u] = self.current_time
-            if deleted_val['dist'] != self.dist[u]:
-                self.current_time += 1
-                continue
             for v in range(self.num_vertices):
                 weight = self.graph[u][v]
                 if weight != math.inf and u != v:
                     new_dist = self.dist[u] + weight
                     if new_dist < self.dist[v]:
+                        print(f"[{self.current_time}] Updating node {v} from dist {self.dist[v]} to {new_dist} via {u}")
                         self.dist[v] = new_dist
                         self.pred[v] = u
                         self.rpq.invoke_insert(v, self.current_time, new_dist, u)
             self.current_time += 1
-
     def dynamic_dijkstra(self, et: int, eh: int, new_weight: float):
         N = self.rpq.get_vertex_node(eh, active_only=True)
-        if N is None:
+        if N is None: #supposed to have no change
             new_dist = self.dist[et] + new_weight
             if new_dist < self.dist[eh]:
                 self.dist[eh] = new_dist
@@ -208,7 +212,7 @@ class DynamicDijkstra:
                 continue
             processed.add(u)
             self.deletion_times[u] = self.current_time
-            if n['dist'] != self.dist[u]:
+            if n['dist'] != self.dist[u]:      
                 self.current_time += 1
                 continue
             for v in range(self.num_vertices):
@@ -224,11 +228,64 @@ class DynamicDijkstra:
                         self.rpq.invoke_insert(v, self.current_time, new_dist, u)
                         self.current_time += 1
             self.current_time += 1
+    # def dynamic_dijkstra(self, et: int, eh: int, new_weight: float):
+    #     N = self.rpq.get_vertex_node(eh, active_only=True)
+    #     if N is None: #supposed to have no change
+    #         return
+    #     if N.value['node'].valid:
+    #         if self.pred[eh] == et:
+    #             new_dist = self.dist[et] + new_weight
+    #             self.dist[eh] = new_dist
+    #             self.rpq.invoke_insert(eh, self.current_time, new_dist, et)
+    #             self.current_time += 1
+    #         else:
+    #             new_dist = self.dist[et] + new_weight
+    #             if new_dist < self.dist[eh]:#et becomes eh
+    #                 self.dist[eh] = new_dist
+    #                 self.pred[eh] = et
+    #                 self.rpq.invoke_insert(eh, self.current_time, new_dist, et)
+    #                 self.current_time += 1
+    #     else:
+    #         del_time = self.deletion_times.get(eh)
+    #         if del_time is not None:
+    #             self.rpq.revoke_del_min(del_time)
+    #             if self.pred[eh] == et:
+    #                 new_dist = self.dist[et] + new_weight
+    #                 self.dist[eh] = new_dist
+    #                 self.rpq.invoke_insert(eh, self.current_time, new_dist, et)
+    #                 self.current_time += 1
+    #     processed = set()
+    #     while True:
+    #         n = self.rpq.invoke_del_min(self.current_time)
+    #         if not n:
+    #             break
+    #         u = n['vertex']
+    #         if u in processed:
+    #             self.current_time += 1
+    #             continue
+    #         processed.add(u)
+    #         self.deletion_times[u] = self.current_time
+    #         if n['dist'] != self.dist[u]:      
+    #             self.current_time += 1
+    #             continue
+    #         for v in range(self.num_vertices):
+    #             weight = self.graph[u][v]
+    #             if weight != math.inf and u != v:
+    #                 if self.pred[v] == eh:
+    #                     self.dist[v] = math.inf
+    #                     self.pred[v] = None
+    #                 new_dist = self.dist[u] + weight
+    #                 if new_dist < self.dist[v]:
+    #                     self.dist[v] = new_dist
+    #                     self.pred[v] = u
+    #                     self.rpq.invoke_insert(v, self.current_time, new_dist, u)
+    #                     self.current_time += 1
+    #         self.current_time += 1
 
     def update_edge(self, u: int, v: int, new_weight: float):
         old_weight = self.graph[u][v]
         self.graph[u][v] = new_weight
-        self.graph[v][u] = new_weight  # Ensure undirected
+        # self.graph[v][u] = new_weight  # Ensure undirected
         if new_weight < old_weight:
             self.dynamic_dijkstra(u, v, new_weight)
         elif new_weight > old_weight:
@@ -237,33 +294,45 @@ class DynamicDijkstra:
 # Example usage
 if __name__ == "__main__":
     inf = math.inf
+    # graph = [
+    #     [0,   2,   5,   4,   inf, inf, inf, inf],#0
+    #     [2,   0,   2,   4,   7,   inf, 12,  inf],#1
+    #     [5,   2,   0,   1,   4,   3,   inf, inf],#2
+    #     [4,   4,   1,   0,   inf, 4,   inf, 7],  #3
+    #     [inf, 7,   4,   inf, 0,   4,   inf, 5],  #4
+    #     [inf, inf, 3,   4,   4,   0,   inf, 7],  #5
+    #     [inf, 12,  inf, inf, inf, inf, 0,   3],  #6
+    #     [inf, inf, inf, 7,   5,   7,   3,   0]   #7
+    # ]
     graph = [
-        [0,   2,   5,   4,   inf, inf, inf, inf],
-        [2,   0,   2,   4,   7,   inf, 12,  inf],
-        [5,   2,   0,   1,   4,   3,   inf, inf],
-        [4,   4,   1,   0,   inf, 4,   inf, 7],
-        [inf, 7,   4,   inf, 0,   4,   inf, 5],
-        [inf, inf, 3,   4,   4,   0,   inf, 7],
-        [inf, 12,  inf, inf, inf, inf, 0,   3],
-        [inf, inf, inf, 7,   5,   7,   3,   0]
+        [0,   2,   5,   4,   inf, inf, inf, inf],  # Node 0
+        [inf, 0,   2,   4,   7,   inf, inf,  inf],  # Node 1
+        [inf, inf, 0,   1,   inf, inf, inf, inf],  # Node 2
+        [inf, inf, inf, 0,   inf,   4,   3, inf],  # Node 3
+        [inf, inf, inf, inf, 0, inf, inf,   5],  # Node 4
+        [inf, inf, inf, inf, inf, 0, inf,   7],  # Node 5
+        [inf, inf, inf, inf, inf, inf, 0,   3],  # Node 6
+        [inf, inf, inf, inf, inf, inf, inf, 0]  # Node 7
     ]
+
     dd = DynamicDijkstra(graph)
     dd.initial_dijkstra(0)
     print("Initial distances:", [round(d, 1) for d in dd.dist])
     print("Predecessors:", dd.pred)
 
-    dd.update_edge(2, 4, 5)
+    dd.update_edge(5, 7, 1)
     print("After update (2,4) to 5:", [round(d, 1) for d in dd.dist])
     print("Predecessors:", dd.pred)
 
-    dd.update_edge(0, 1, 7)
-    print("After update (0,1) to 7:", [round(d, 1) for d in dd.dist])
+
+    dd.update_edge(5, 7, 11)
+    print("After update (2,4) to 5:", [round(d, 1) for d in dd.dist])
     print("Predecessors:", dd.pred)
 
-    dd.update_edge(1, 2, 1)
-    print("After update (1,2) to 1:", [round(d, 1) for d in dd.dist])
-    print("Predecessors:", dd.pred)
+    # dd.update_edge(1, 2, 1)
+    # print("After update (1,2) to 1:", [round(d, 1) for d in dd.dist])
+    # print("Predecessors:", dd.pred)
 
-    dd.update_edge(0, 3, 1)
-    print("After update (0,3) to 1:", [round(d, 1) for d in dd.dist])
-    print("Predecessors:", dd.pred)
+    # dd.update_edge(0, 3, 1)
+    # print("After update (0,3) to 1:", [round(d, 1) for d in dd.dist])
+    # print("Predecessors:", dd.pred)
