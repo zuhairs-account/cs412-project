@@ -828,7 +828,7 @@ class DynamicDijkstra:
 
             
             # If found a better historical path, restore it
-            print("Best historical dist:",best_historical_dist)
+            # print("Best historical dist:",best_historical_dist)
             if best_historical_dist < potential_new_dist_v:
                 print(f"[{self.current_time:.1f}] Found better historical path to {v} via {best_historical_pred} (dist {best_historical_dist:.1f})")
                 
@@ -866,7 +866,7 @@ class DynamicDijkstra:
         distrn = potential_new_dist_v
         paths = {}
         from collections import defaultdict, deque
-        print(self.graph)
+        # print(self.graph)
         children = defaultdict(list)
         graph  = self.graph
         
@@ -876,7 +876,7 @@ class DynamicDijkstra:
                     children[i].append((j, graph[i][j]))
                 elif i not in children:
                     children[i]=[]
-        print(children)
+        # print(children)
         vertices = keys_list = list(children.keys())
 
         while q:
@@ -895,8 +895,8 @@ class DynamicDijkstra:
                 best_del_time = None
                 for deletion_time in self.processed_times.get(child, []):
                     rb_node = self.rpq.T_d_m.search((deletion_time,))
-                    print(self.dist)
-                    print(f"rbnodes: {rb_node.value.vertex} rbdist: {rb_node.value.dist} rbpred: {rb_node.value.pred}")
+                    # print(self.dist)
+                    # print(f"rbnodes: {rb_node.value.vertex} rbdist: {rb_node.value.dist} rbpred: {rb_node.value.pred}")
                     if rb_node.value.pred and rb_node.value.pred not in checked:
                         checked.append(rb_node.value.pred)
                     if rb_node and rb_node.value:
@@ -906,15 +906,15 @@ class DynamicDijkstra:
                         if historical_node.pred != currents[0]:# Avoid updated path
                             if best_historical_pred:
                                 # print("Best hsitorical pred dist:", best_historical.dist)
-                                print(self.dist)
+                                # print(self.dist)
                                 if (historical_node.dist < best_historical_dist or historical_node.dist<self.graph[currents[0]][child]+distrn) and (historical_node.dist-graph[best_historical_pred][child]==self.dist[best_historical_pred]):
                                     best_historical_dist = historical_node.dist
                                     best_historical_pred = historical_node.pred
                                     best_del_time = deletion_time
-                                    print("here with",best_historical_dist)
+                                    # print("here with",best_historical_dist)
                 # print(checked)
                 if best_historical_dist != math.inf:
-                    print(self.dist)
+                    # print(self.dist)
                     print(f"[{self.current_time:.1f}] Better historical path to {child} via {best_historical_pred} (dist {best_historical_dist:.1f})")
                     self.dist[child] = best_historical_dist
                     self.pred[child] = best_historical_pred
@@ -938,8 +938,8 @@ class DynamicDijkstra:
                                 bestpred = parent
                                 bestdist = self.dist[parent] + graph[parent][child]
                     if bestdist<self.graph[currents[0]][child]+distrn:
-                        print(checked)
-                        print(f"[{self.current_time:.1f}] Found new shortest path thorugh {bestpred} for {child} with dist {bestdist}")
+                        # print(checked)
+                        # print(f"[{self.current_time:.1f}] Found new shortest path thorugh {bestpred} for {child} with dist {bestdist}")
                         self.dist[child] = bestdist
                         self.pred[child] = bestpred
                         self.rpq.invoke_insert(child, self.current_time, bestdist, bestpred)
