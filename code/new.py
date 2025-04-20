@@ -73,8 +73,52 @@ class RBTree:
             parent.right = new_node
         new_node.color = 'RED' # Basic coloring
         # No fixup implemented
-        self.root.color = 'BLACK' # Ensure root is black
+        self._insert_fixup(new_node)
+        # self.root.color = 'BLACK' # Ensure root is black
         return new_node
+    
+    def _insert_fixup(self, k):
+        """Maintains Red-Black properties after insertion."""
+        while k.parent is not None and k.parent.color == 'R':
+            if k.parent == k.parent.parent.right:
+                u = k.parent.parent.left  # uncle
+                if u.color == 'RED':
+                    # Case 3.1: Uncle is Red
+                    u.color = 'BLACK'
+                    k.parent.color = 'BLACK'
+                    k.parent.parent.color = 'RED'
+                    k = k.parent.parent
+                else:
+                    # Case 3.2: Uncle is Black
+                    if k == k.parent.left:
+                        # Case 3.2.2: Node is left child (requires right rotation)
+                        k = k.parent
+                        self._right_rotate(k)
+                    # Case 3.2.1: Node is right child (requires left rotation)
+                    k.parent.color = 'BLACK'
+                    k.parent.parent.color = 'RED'
+                    self._left_rotate(k.parent.parent)
+            else:
+                u = k.parent.parent.right  # uncle
+                if u.color == 'RED':
+                    # Case 3.1 (symmetric): Uncle is Red
+                    u.color = 'BLACK'
+                    k.parent.color = 'BLACK'
+                    k.parent.parent.color = 'RED'
+                    k = k.parent.parent
+                else:
+                     # Case 3.2 (symmetric): Uncle is Black
+                    if k == k.parent.right:
+                         # Case 3.2.2 (symmetric)
+                        k = k.parent
+                        self._left_rotate(k)
+                    # Case 3.2.1 (symmetric)
+                    k.parent.color = 'BLACK'
+                    k.parent.parent.color = 'RED'
+                    self._right_rotate(k.parent.parent)
+            if k == self.root:
+                break
+        self.root.color = 'BLACK' # Root must always be black
 
     def minimum(self, start_node: Optional[RBNode] = None) -> Optional[RBNode]:
         node = start_node if start_node else self.root
@@ -446,7 +490,7 @@ class DynamicDijkstra:
             # No need to check u in self.processed_at_time here, done implicitly by RPQ valid state? Revisit if needed.
             # Check for stale entry
             if self.dist[u] < dist_u_rpq:
-                print(f"[{time_to_process:.1f}] Stale RPQ entry for {u}. Known dist={self.dist[u]:.1f} < RPQ dist={dist_u_rpq:.1f}. Skipping relaxation.")
+                # print(f"[{time_to_process:.1f}] Stale RPQ entry for {u}. Known dist={self.dist[u]:.1f} < RPQ dist={dist_u_rpq:.1f}. Skipping relaxation.")
                 self._increment_time()
                 time_to_process = self.current_time
                 processed_in_this_run.clear() # Reset for next potential start
@@ -457,7 +501,7 @@ class DynamicDijkstra:
                 self.processed_times[u].append(time_to_process)            # self.processed_at_time[u] = time_to_process
             # print(f"[{time_to_process:.1f}] Processing node {u} (Dist={dist_u_rpq:.1f}).")
             if dist_u_rpq < self.dist[u]:            # Update main distance if necessary
-                 print(f"[{time_to_process:.1f}] Updating main dist for {u} from {self.dist[u]:.1f} to {dist_u_rpq:.1f}")
+                #  print(f"[{time_to_process:.1f}] Updating main dist for {u} from {self.dist[u]:.1f} to {dist_u_rpq:.1f}")
                  self.dist[u] = dist_u_rpq
                  self.pred[u] = min_pq_node.pred # Use pred from the PQNode being processed
             for v in range(self.num_vertices):            # Relax outgoing edges
@@ -479,7 +523,8 @@ class DynamicDijkstra:
                                     #   print(f"[!ALERT {time_to_process:.1f}!] Insertion for {v} conflicts with Del_Min at {inconsistent_del.key[0]:.1f}")
                                       # Basic handling: just print alert
                           else:
-                               print(f"[{time_to_process:.1f}] Skipping relaxation from {u}; its distance is infinity.")
+                              pass
+                            #    print(f"[{time_to_process:.1f}] Skipping relaxation from {u}; its distance is infinity.")
                 else:
                     pass
                     #  print(f"ERROR [{time_to_process:.1f}]: Invalid vertex index during relaxation ({u}, {v})")
@@ -670,7 +715,7 @@ class DynamicDijkstra:
 
         # Case 1: 'v' not in RPQ at all
         if not latest_pq_node_v:
-            print(f"[{self.current_time:.1f}] Vertex {v} not found in RPQ history.")
+            # print(f"[{self.current_time:.1f}] Vertex {v} not found in RPQ history.")
             if self.dist[u] != math.inf:
                 potential_new_dist_v = self.dist[u] + new_weight
                 if potential_new_dist_v < self.dist[v]:
@@ -859,7 +904,7 @@ class DynamicDijkstra:
                 updated = True
             else:
                 
-                print(f"[{self.current_time:.1f}] No better path found for {v}. Maintaining new  distance.")
+                # print(f"[{self.current_time:.1f}] No better path found for {v}. Maintaining new  distance.")
                 self.dist[v] = potential_new_dist_v
                 self.pred[v] = u
                 newdist = potential_new_dist_v
@@ -1195,23 +1240,23 @@ class DynamicDijkstra:
 
 
     def update_edge(self, u: int, v: int, new_weight: float):
-        """Public method to update an edge weight."""
-        if u < 0 or u >= self.num_vertices or v < 0 or v >= self.num_vertices:
-            print(f"Error: Invalid vertices ({u}, {v})")
-            return
-        if new_weight < 0:
-            print("Error: Negative weights not supported.")
-            return
-        if new_weight == math.inf and self.graph[u][v] == math.inf:
-             print(f"Edge ({u}, {v}) already non-existent. No update.")
-             return # No change needed
+        # """Public method to update an edge weight."""
+        # if u < 0 or u >= self.num_vertices or v < 0 or v >= self.num_vertices:
+        #     print(f"Error: Invalid vertices ({u}, {v})")
+        #     return
+        # if new_weight < 0:
+        #     print("Error: Negative weights not supported.")
+        #     return
+        # if new_weight == math.inf and self.graph[u][v] == math.inf:
+        #      print(f"Edge ({u}, {v}) already non-existent. No update.")
+        #      return # No change needed
 
-        print(f"\n>>> Updating Edge ({u}, {v}) from {self.graph[u][v]:.1f} to {new_weight:.1f}")
+        # print(f"\n>>> Updating Edge ({u}, {v}) from {self.graph[u][v]:.1f} to {new_weight:.1f}")
         # Update graph *before* handling, so handle_edge_update sees the new weight
         self.graph[u][v] = new_weight
         self.handle_edge_update(u, v, new_weight)
 
-starttime = time.time()
+
 # --- Example Usage --- (Remains the same)
 if __name__ == "__main__":
     inf = math.inf
@@ -1225,6 +1270,7 @@ if __name__ == "__main__":
         [inf, inf, inf, inf, inf, inf, inf,   3],    # Node 6
         [inf, inf, inf, inf, inf, inf, inf, inf]     # Node 7
     ]
+    # print(graph)
     #          A    B    C    D    E    F
     # graph = [
     #     [0,   2,   4,   math.inf, math.inf, math.inf],  # A
@@ -1235,43 +1281,183 @@ if __name__ == "__main__":
     #     [math.inf, math.inf, math.inf, 1,    5,    0]   # F
     # ]
 
-    dd = DynamicDijkstra(graph)
+    # dd = DynamicDijkstra(graph)
+    # source_node = 0
+    # dd.initial_dijkstra(source_node)
+
+    # print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+
+    import numpy as np
+
+    import random
+    import numpy as np
+
+    def generate_adjacency_matrix(n_vertices, n_edges, directed=True, weighted=True, min_weight=1, max_weight=10):
+        """
+        Generates a random adjacency matrix for a graph with given vertices and edges.
+        
+        Args:
+            n_vertices (int): Number of vertices (nodes)
+            n_edges (int): Number of edges
+            directed (bool): If True, generates a directed graph (default)
+            weighted (bool): If True, assigns random weights (default)
+            min_weight (int): Minimum edge weight (default=1)
+            max_weight (int): Maximum edge weight (default=10)
+            
+        Returns:
+            list: Adjacency matrix as a 2D list (list of lists)
+        """
+        # Initialize adjacency matrix with 'inf' (no edge)
+        adj_matrix = [[float('inf')] * n_vertices for _ in range(n_vertices)]
+        
+        # Ensure no self-loops (diagonal entries should be inf)
+        for i in range(n_vertices):
+            adj_matrix[i][i] = float('inf')
+        
+        # Maximum possible edges
+        max_possible_edges = n_vertices * (n_vertices - 1) if directed else n_vertices * (n_vertices - 1) // 2
+        
+        # Ensure requested edges don't exceed maximum possible
+        if n_edges > max_possible_edges:
+            raise ValueError(f"Maximum possible edges for {n_vertices} vertices is {max_possible_edges}")
+        
+        # Generate edges
+        edges_added = 0
+        while edges_added < n_edges:
+            u, v = random.randint(0, n_vertices - 1), random.randint(0, n_vertices - 1)  # Random vertices
+            
+            if u != v and adj_matrix[u][v] == float('inf'):  # No self-loops or duplicate edges
+                weight = random.randint(min_weight, max_weight) if weighted else 1
+                adj_matrix[u][v] = weight
+                if not directed:  # If undirected, mirror the edge
+                    adj_matrix[v][u] = weight
+                edges_added += 1
+        
+        return adj_matrix
+
+
+    import math
+
+    import random
+
+    def generate_random_updates(adj_matrix, n):
+        """
+        Generates random updates to the adjacency matrix by modifying the edge weights.
+
+        Args:
+            adj_matrix (list): 2D adjacency matrix representing the graph
+            n (int): Number of updates to generate
+            
+        Returns:
+            list: List of updates (tuples) in the form (u, v, new_weight)
+        """
+        updates = []
+        num_vertices = len(adj_matrix)
+
+        for _ in range(n):
+            # Randomly pick two distinct vertices
+            u, v = random.sample(range(num_vertices), 2)
+            
+            # Ensure there is an edge between u and v (adjacency check)
+            if adj_matrix[u][v] != 0 and adj_matrix[u][v]!=math.inf:  # Check if there is an existing edge
+                # Choose randomly whether to increase or decrease the edge weight
+                current_weight = adj_matrix[u][v]
+                change = random.choice([-1, 1])  # Decrease (-1) or Increase (+1) the weight
+                max_change = 10  # Adjust for a reasonable change range
+                new_weight = current_weight + change * random.uniform(0, max_change)
+
+                # Ensure weight is non-negative
+                new_weight = max(0, new_weight)
+
+                # Apply the update
+                adj_matrix[u][v] = new_weight
+                adj_matrix[v][u] = new_weight  # Assuming undirected graph, if directed, skip this line
+                
+                updates.append((u, v, new_weight))  # Save update
+            else:
+                # No edge between u and v, generate an edge with random weight
+                new_weight = random.uniform(1, 10)  # Random weight between 1 and 10
+                adj_matrix[u][v] = new_weight
+                adj_matrix[v][u] = new_weight  # Assuming undirected graph
+
+                updates.append((u, v, new_weight))  # Save update
+
+        return updates
+
+    numvertices = 5000
+    numedges = 500
+    numupdates = 200
+    adj = generate_adjacency_matrix(numvertices,numedges)
+    # print(adj)
+    # vertices, edges = convert_adj_matrix_to_vertices_edges(adj)
+    updates = generate_random_updates(adj,numupdates)
+    dd = DynamicDijkstra(adj)
+
     source_node = 0
+    # source_node = random.randint(0, numvertices) 
+    print(source_node)
     dd.initial_dijkstra(source_node)
-
-    print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
+    # print(adj)
 
 
-    # # --- Test Edge Updates ---
+    import time
+    starttime = time.time()
+    for u, v, weight in updates:
+        dd.update_edge(u, v, weight)   
+        # print("complete") 
+    endtime = time.time()
+    print(endtime-starttime)
+
+    # # # --- Test Edge Updates ---
+    # starttime = time.time()
+    # dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    # dd.update_edge(1, 4, 1.0)    # Decrease weight (7 -> 1)
+    # dd.update_edge(3, 5, 100.0)  # Increase weight (4 -> 100)
+    # dd.update_edge(6, 7, 100.0)  # Increase weight (3 -> 100)
+    # dd.update_edge(0, 2, 1.0)    # Decrease weight (5 -> 1)
+    # dd.update_edge(3, 6, 100.0)  # Increase weight (3 -> 100)
+    # dd.update_edge(1, 2, 0.5)    # Decrease weight (2 -> 0.5)
+    # dd.update_edge(2, 3, 10.0)   # Increase weight (1 -> 10)
+    # dd.update_edge(4, 7, 2.0)    # Decrease weight (5 -> 2)
+    # dd.update_edge(5, 7, 20.0)   # Increase weight (7 -> 20)
+    # dd.update_edge(0, 1, 3.0)    # Increase weight (2 -> 3)
+    # dd.update_edge(1, 3, 10.0)   # Increase weight (4 -> 10)
+    # endtime = time.time()
+    # print(endtime-starttime)
+
     # dd.update_edge(0, 3, 100.0) # Decrease weight (7 -> 1)
     # dd.update_edge(1, 4, 1.0) # Decrease weight (7 -> 1)
     # dd.update_edge(3, 5, 100.0) # Decrease weight (7 -> 1)
     # dd.update_edge(6, 7, 100.0) # Decrease weight (7 -> 1)
     # dd.update_edge(0, 2, 1.0) # Decrease weight (7 -> 1)
     # dd.update_edge(3, 6, 100.0) # Decrease weight (7 -> 1)
-    # endtime = time.time()
-    # print(endtime-starttime)
-    dd.update_edge(0, 3, 100.0) # Decrease weight (7 -> 1)
+    # dd.update_edge(0, 3, 100.0) # Decrease weight (7 -> 1)
     
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 100:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 1.0) # Decrease weight (7 -> 1)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 100:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 1.0) # Decrease weight (7 -> 1)
 
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 1:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 100.0) # Decrease weight (7 -> 1)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 1:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 100.0) # Decrease weight (7 -> 1)
 
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 100:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 100:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 4) # Decrease weight (7 -> 1)
+
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
 
     # dd.update_edge(5, 7, 11.0) # Increase weight (1 -> 11)
 
