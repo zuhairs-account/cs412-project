@@ -3,6 +3,8 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Tuple
 import time
+import random
+
 
 # --- Data Structures ---
 
@@ -1256,46 +1258,7 @@ class DynamicDijkstra:
         self.graph[u][v] = new_weight
         self.handle_edge_update(u, v, new_weight)
 
-
-# --- Example Usage --- (Remains the same)
-if __name__ == "__main__":
-    inf = math.inf
-    graph = [ 
-        [inf,   2,   5,   4,   inf, inf, inf, inf],   # Node 0
-        [inf, inf,   2,   4,   7,   inf, inf,  inf],  # Node 1
-        [inf, inf,inf,   1,   inf, inf, inf, inf],   # Node 2
-        [inf, inf, inf, inf,   inf,   4,   3, inf],  # Node 3
-        [inf, inf, inf, inf, inf, inf, inf,   5],    # Node 4
-        [inf, inf, inf, inf, inf, inf, inf,   7],    # Node 5
-        [inf, inf, inf, inf, inf, inf, inf,   3],    # Node 6
-        [inf, inf, inf, inf, inf, inf, inf, inf]     # Node 7
-    ]
-    # print(graph)
-    #          A    B    C    D    E    F
-    # graph = [
-    #     [0,   2,   4,   math.inf, math.inf, math.inf],  # A
-    #     [2,   0,   1,   4,    7,    math.inf],  # B 
-    #     [4,   1,   0,   math.inf, 3,    math.inf],  # C
-    #     [math.inf, 4,   math.inf, 0,    2,    1],  # D
-    #     [math.inf, 7,   3,    2,    0,    5],  # E
-    #     [math.inf, math.inf, math.inf, 1,    5,    0]   # F
-    # ]
-
-    # dd = DynamicDijkstra(graph)
-    # source_node = 0
-    # dd.initial_dijkstra(source_node)
-
-    # print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
-    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    # print("Predecessors:", dd.pred)
-    # print("-" * 50)
-
-    import numpy as np
-
-    import random
-    import numpy as np
-
-    def generate_adjacency_matrix(n_vertices, n_edges, directed=True, weighted=True, min_weight=1, max_weight=10):
+def generate_adjacency_matrix(n_vertices, n_edges, directed=True, weighted=True, min_weight=1, max_weight=10):
         """
         Generates a random adjacency matrix for a graph with given vertices and edges.
         
@@ -1338,12 +1301,7 @@ if __name__ == "__main__":
         
         return adj_matrix
 
-
-    import math
-
-    import random
-
-    def generate_random_updates(adj_matrix, n):
+def generate_random_updates(adj_matrix, n):
         """
         Generates random updates to the adjacency matrix by modifying the edge weights.
 
@@ -1386,6 +1344,50 @@ if __name__ == "__main__":
                 updates.append((u, v, new_weight))  # Save update
 
         return updates
+
+# --- Example Usage --- (Remains the same)
+if __name__ == "__main__":
+    inf = math.inf
+    graph = [ 
+        [inf,   2,   5,   4,   inf, inf, inf, inf],   # Node 0
+        [inf, inf,   2,   4,   7,   inf, inf,  inf],  # Node 1
+        [inf, inf,inf,   1,   inf, inf, inf, inf],   # Node 2
+        [inf, inf, inf, inf,   inf,   4,   3, inf],  # Node 3
+        [inf, inf, inf, inf, inf, inf, inf,   5],    # Node 4
+        [inf, inf, inf, inf, inf, inf, inf,   7],    # Node 5
+        [inf, inf, inf, inf, inf, inf, inf,   3],    # Node 6
+        [inf, inf, inf, inf, inf, inf, inf, inf]     # Node 7
+    ]
+    # print(graph)
+    #          A    B    C    D    E    F
+    # graph = [
+    #     [0,   2,   4,   math.inf, math.inf, math.inf],  # A
+    #     [2,   0,   1,   4,    7,    math.inf],  # B 
+    #     [4,   1,   0,   math.inf, 3,    math.inf],  # C
+    #     [math.inf, 4,   math.inf, 0,    2,    1],  # D
+    #     [math.inf, 7,   3,    2,    0,    5],  # E
+    #     [math.inf, math.inf, math.inf, 1,    5,    0]   # F
+    # ]
+
+    # dd = DynamicDijkstra(graph)
+    # source_node = 0
+    # dd.initial_dijkstra(source_node)
+
+    # print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+
+    import numpy as np
+
+    import random
+    import numpy as np
+
+
+    import math
+
+
+    
 
     numvertices = 5000
     numedges = 500
