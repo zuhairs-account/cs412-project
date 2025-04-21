@@ -31,3 +31,7 @@ These systems require the shortest paths to be recalculated efficiently upon upd
 - Update time complexity: **O(n log m)**
 - Optimized for time and memory usage.
 
+- ## Setup and Running
+
+- Navigate to the test repository in Checkpoint 3. There are many files you may try out for yourself by simply running the Python file you pick, but we recommend new.py for multiple test cases, and new_visual.py for a visualization of selected test cases.
+
