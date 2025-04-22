@@ -12,7 +12,7 @@ def dijkstra(graph, source):
     dist[source] = 0
     pq = [(0, source)]
     visited = set()
-    print(num_vertices)
+    # print(num_vertices)
     
     while pq:
         current_dist, u = heapq.heappop(pq)
@@ -27,6 +27,37 @@ def dijkstra(graph, source):
                     pred[v] = u
                     heapq.heappush(pq, (alt, v))
     return dist, pred
+
+# def dijkstra_without_pq(graph, source):
+#     num_vertices = len(graph)
+#     dist = [math.inf] * num_vertices
+#     pred = [None] * num_vertices
+#     dist[source] = 0
+#     array_ = [(0, source)]
+#     visited = set()
+#     # print(num_vertices)
+    
+#     while len(array_)>0:
+#         # min_index = 0       #actually tarversing array to find min
+#         min_value = math.inf
+#         # print(array_[0])
+#         for i in range(0, len(array_)):
+#             if array_[i][0] < min_value:
+#                 min_value = array_[i][0]
+#                 min_index = i
+
+#         current_dist, u = array_.pop(min_index)
+#         if u in visited:
+#             continue
+#         visited.add(u)
+#         for v in range(num_vertices):
+#             if graph[u][v] != math.inf:
+#                 alt = current_dist + graph[u][v]
+#                 if alt < dist[v]:
+#                     dist[v] = alt
+#                     pred[v] = u
+#                     array_.append((alt, v))
+#     return dist, pred
 
 # Bellman-Ford Algorithm
 def bellend_ford(graph, source):
@@ -90,8 +121,8 @@ def compare_algorithms():
     # med
 
     numvertices = 20000
-    numedges = 2000
-    numupdates = 200
+    numedges = 20000
+    numupdates = 5000
 
     # big
     
@@ -137,6 +168,7 @@ def compare_algorithms():
     graph_dijkstra = [row[:] for row in adj]
     dist_dijkstra, pred_dijkstra = dijkstra(graph_dijkstra, source_node)
     time_dijkstra = 0
+    time_dijkstra_without_pq = 0
     print(len(updates))
     for i, (u, v, weight) in enumerate(updates):
         print(i)
@@ -145,8 +177,16 @@ def compare_algorithms():
         # print("her")
         dist_dijkstra, pred_dijkstra = dijkstra(graph_dijkstra, source_node)
         end = time.time()
+        # start_wopq = time.time()
+        # # print("her")
+        # dist_dijkstra_wopq, pred_dijkstra_wopq = dijkstra_without_pq(graph_dijkstra, source_node)
+        # end_wopq = time.time()
+        # if dist_dijkstra!=dist_dijkstra_wopq or pred_dijkstra!=pred_dijkstra_wopq:
+        #     print("Dijkstra without and with PQ are not giving same results!")
+        #     break
         time_dijkstra += end - start
-        if i == 199:
+        # time_dijkstra_without_pq += end_wopq-start_wopq
+        if i == 499:
             print("bah")
             break
     
@@ -168,7 +208,8 @@ def compare_algorithms():
     
     # Print results
     print(f"Dynamic Algorithm Update Time: {time_dynamic:.4f} seconds")
-    print(f"Standard Dijkstra's Update Time: {time_dijkstra:.4f} seconds")
+    print(f"Standard Dijkstra's with PQ Update Time: {time_dijkstra:.4f} seconds")
+    
     # print(f"Bellman-Ford Update Time: {time_bf:.4f} seconds")
 
 if __name__ == "__main__":

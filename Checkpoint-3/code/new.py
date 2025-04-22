@@ -434,6 +434,7 @@ class RPQ:
                   print(f"  Key: {key}, Value Type: {type(pq_node_deleted)} (Expected PQNode)")
         print(f"  Total T_d_m Nodes: {len(nodes_del)}")
         print("=" * 30)
+from collections import defaultdict, deque
 
 class DynamicDijkstra:
     def __init__(self, graph: list[list[float]]):
@@ -443,6 +444,7 @@ class DynamicDijkstra:
         self.pred: List[Optional[int]] = [None] * self.num_vertices
         self.rpq = RPQ()
         self.current_time = 0.0
+        self.children = defaultdict(list)
         # self.processed_at_time: Dict[int, float] = {}
         self.processed_times: Dict[int, List[float]] = {}  # All deletion times for each vertex
 
@@ -458,6 +460,14 @@ class DynamicDijkstra:
         self.rpq.invoke_insert(source, self.current_time, 0.0, None)
         self._increment_time()
         self.propagate_changes()
+        graph  = self.graph
+        self.numvertices = len(graph)
+        for i in range(len(self.graph)):
+            for j in range(len(graph[i])):
+                if graph[i][j] != math.inf and self.graph[i][j] != 0:
+                    self.children[i].append((j, self.graph[i][j]))
+                elif i not in self.children:
+                    self.children[i]=[]
         print(f"--- Initial Dijkstra Complete ---")
 
 
@@ -500,6 +510,7 @@ class DynamicDijkstra:
             if u not in self.processed_times:            # Mark as processed *at this time*
                 self.processed_times[u] = [time_to_process]
             else:
+                # del self.processed_times[u]
                 self.processed_times[u].append(time_to_process)            # self.processed_at_time[u] = time_to_process
             # print(f"[{time_to_process:.1f}] Processing node {u} (Dist={dist_u_rpq:.1f}).")
             if dist_u_rpq < self.dist[u]:            # Update main distance if necessary
@@ -534,176 +545,6 @@ class DynamicDijkstra:
             self._increment_time()
             time_to_process = self.current_time
             processed_in_this_run.clear() # Reset for next minimum find
-
-    # def handle_edge_update(self, u: int, v: int, new_weight: float):        
-    #     print(f"\n--- Handling Edge Update ({u}, {v}) to New Weight={new_weight:.1f} at Time={self.current_time:.1f} ---")
-    #     # self.rpq.print_state(self.current_time)
-    #     # Update edge weight in the graph
-    #     self.graph[u][v] = new_weight
-    #     latest_node_v_rb = self.rpq.find_vertex_rbnode_in_tins(v, active_only=False)
-    #     latest_pq_node_v = latest_node_v_rb.value if latest_node_v_rb else None
-
-    #     if not latest_pq_node_v:        # Case 1: 'v' not in RPQ at all
-    #         print(f"[{self.current_time:.1f}] Vertex {v} not found in RPQ history.")
-    #         if self.dist[u] != math.inf:
-    #             potential_new_dist_v = self.dist[u] + new_weight
-    #             if potential_new_dist_v < self.dist[v]:
-    #                 print(f"[{self.current_time:.1f}] New edge creates better path to {v}.")
-    #                 self.dist[v] = potential_new_dist_v
-    #                 self.pred[v] = u
-    #                 self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-    #                 self.propagate_changes(self.current_time)
-    #         return
-
-    #     if latest_pq_node_v.valid:        # Case 2: 'v' is currently active in the RPQ
-    #         print(f"[{self.current_time:.1f}] Vertex {v} is ACTIVE in RPQ.")
-    #         new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
-    #         if self.pred[v] == u:
-    #             print(f"[{self.current_time:.1f}] Path to {v} is via {u}. Updating.")
-    #             if latest_node_v_rb:
-    #                 self.rpq.revoke_insert(latest_node_v_rb.key)
-    #             self.dist[v] = new_dist_v
-    #             self.rpq.invoke_insert(v, self.current_time, new_dist_v, u)
-    #             self.propagate_changes(self.current_time)
-    #         else:
-    #             if new_dist_v < self.dist[v]:
-    #                 print(f"[{self.current_time:.1f}] New path to {v} via ({u},{v}) is better.")
-    #                 self.dist[v] = new_dist_v
-    #                 self.pred[v] = u
-    #                 self.rpq.invoke_insert(v, self.current_time, new_dist_v, u)
-    #                 self.propagate_changes(self.current_time)
-    #         return
-    #     # Case 3: 'v' has been processed previously - Enhanced handling
-    #     print(f"[{self.current_time:.1f}] Vertex {v} was already PROCESSED.")
-    #     # Get all deletion times for this vertex (sorted newest first)
-    #     deletion_times = sorted(self.processed_times.get(v, []), reverse=True)
-    #     print("Processedtimes: ", self.processed_times)
-    #     # print("REAL DELS: ", deletion_times)
-    #     if not deletion_times:
-    #         print(f"ERROR [{self.current_time:.1f}]: Processed vertex {v} has no deletion times recorded!")
-    #         return
-    #     potential_new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
-    #     path_via_u_used = (self.pred[v] == u)
-    #     if potential_new_dist_v < self.dist[v]:
-
-    #         if path_via_u_used:
-    #             # Edge was part of the final path - need to invalidate all relevant deletions
-    #             # pass
-    #             print(f"[{self.current_time:.1f}] Processed path to {v} was via {u}. Checking all deletions.")
-    #             # Find all deletions where the path was via u
-    #             relevant_deletions = []
-    #             rbnodes = []
-    #             for del_time in deletion_times:
-    #                 rb_node = self.rpq.T_d_m.search((del_time,))
-    #                 if rb_node and rb_node.value and rb_node!=u:
-    #                     rbnodes.append(rb_node)
-    #                     relevant_deletions.append(del_time)
-    #             if len(rbnodes)>0:
-    #                 distcheck = math.inf                    
-    #                 for rbn in rbnodes:
-    #                     if rbn.value.dist<distcheck:
-    #                         bestnode = rbn
-    #                         distcheck = rbn.value.dist
-    #                 inconsistent_del = self.rpq.revoke_del_min(bestnode.value.time)
-
-    #             if not relevant_deletions:
-    #                 print(f"[{self.current_time:.1f}] No relevant deletions found via {u}. No action needed.")
-    #                 return
-
-    #             print(f"[{self.current_time:.1f}] Found {len(relevant_deletions)} relevant deletions via {u}")
-                
-    #             # Revoke all relevant deletions (from newest to oldest)
-    #             for del_time in relevant_deletions:
-    #                 print(f"[{self.current_time:.1f}] Revoking deletion at {del_time:.1f}")
-    #                 inconsistent_del = self.rpq.revoke_del_min(del_time)
-    #                 if inconsistent_del:
-    #                     print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-    #             # Clear processed status
-    #             if v in self.processed_times:
-    #                 del self.processed_times[v]
-
-    #             # Invalidate current path
-    #             self.dist[v] = math.inf
-    #             self.pred[v] = None
-
-    #             # If the new weight still provides a valid path, consider it
-    #             if potential_new_dist_v < math.inf:
-    #                 print(f"[{self.current_time:.1f}] Reinserting {v} with potential new path.")
-    #                 self.dist[v] = potential_new_dist_v
-    #                 self.pred[v] = u
-    #                 self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-
-    #             self.propagate_changes(self.current_time)
-
-    #     else:
-    #         # Path wasn't via u - check if new path is better or if we should restore an old path
-    #         print(f"[{self.current_time:.1f}] Path used to process {v} was mehhhh thru {u}.")
-            
-    #         # Check if new path via u is better than current
-    #         if potential_new_dist_v < self.dist[v]:
-    #             print(f"[{self.current_time:.1f}] New path via ({u},{v}) is better. Reactivating {v}.")
-                
-    #             # Revoke only the most recent deletion
-    #             latest_del_time = deletion_times[0]
-    #             print(f"[{self.current_time:.1f}] Revoking latest deletion at {latest_del_time:.1f}")
-    #             inconsistent_del = self.rpq.revoke_del_min(latest_del_time)
-    #             if inconsistent_del:
-    #                 print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-    #             # Update processed times
-    #             # if v in self.processed_times and deletion_times:
-    #             #     self.processed_times[v].remove(latest_del_time)
-    #             #     if not self.processed_times[v]:
-    #             #         del self.processed_times[v]
-
-    #             self.dist[v] = potential_new_dist_v
-    #             self.pred[v] = u
-    #             self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-    #             self.propagate_changes(self.current_time)
-    #         else:
-    #             # New path via u isn't better, but check if we should restore an old path
-    #             print(f"[{self.current_time:.1f}] Checking historical paths to {v}...")
-                
-    #             # Find the best historical path that doesn't use (u,v)
-    #             best_historical_dist = math.inf
-    #             best_historical_pred = None
-    #             best_del_time = None
-                
-    #             for del_time in deletion_times:
-    #                 rb_node = self.rpq.T_d_m.search((del_time,))
-    #                 if rb_node and rb_node.value:
-    #                     historical_node = rb_node.value
-    #                     # Only consider paths that don't go through the updated edge (u,v)
-    #                     if historical_node.pred != u:
-    #                         if historical_node.dist < best_historical_dist:
-    #                             best_historical_dist = historical_node.dist
-    #                             best_historical_pred = historical_node.pred
-    #                             best_del_time = del_time
-                
-    #             # If found a better historical path, restore it
-    #             if best_historical_dist < potential_new_dist_v:
-    #                 print(f"[{self.current_time:.1f}] Found better historical path to {v} via {best_historical_pred} (dist {best_historical_dist:.1f})")
-                    
-    #                 # Revoke the deletion where this path was recorded
-    #                 print(f"[{self.current_time:.1f}] Revoking deletion at {best_del_time:.1f}")
-    #                 inconsistent_del = self.rpq.revoke_del_min(best_del_time)
-    #                 if inconsistent_del:
-    #                     print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-    #                 # Update processed times
-    #                 # if v in self.processed_times:
-    #                 #     self.processed_times[v].remove(best_del_time)
-    #                 #     if not self.processed_times[v]:
-    #                 #         del self.processed_times[v]
-
-    #                 self.dist[v] = best_historical_dist
-    #                 self.pred[v] = best_historical_pred
-    #                 self.rpq.invoke_insert(v, self.current_time, best_historical_dist, best_historical_pred)
-    #                 self.propagate_changes(self.current_time)
-    #             else:
-    #                 print(f"[{self.current_time:.1f}] No better path found for {v}. Maintaining current distance.")
-    #     # self.rpq.print_state(self.current_time)
     def handle_edge_update(self, u: int, v: int, new_weight: float):
             
         # print(f"\n--- Handling Edge Update ({u}, {v}) to New Weight={new_weight:.1f} at Time={self.current_time:.1f} ---")
@@ -715,38 +556,37 @@ class DynamicDijkstra:
         latest_node_v_rb = self.rpq.find_vertex_rbnode_in_tins(v, active_only=False)
         latest_pq_node_v = latest_node_v_rb.value if latest_node_v_rb else None
 
-        # Case 1: 'v' not in RPQ at all
-        if not latest_pq_node_v:
-            # print(f"[{self.current_time:.1f}] Vertex {v} not found in RPQ history.")
-            if self.dist[u] != math.inf:
-                potential_new_dist_v = self.dist[u] + new_weight
-                if potential_new_dist_v < self.dist[v]:
-                    print(f"[{self.current_time:.1f}] New edge creates better path to {v}.")
-                    self.dist[v] = potential_new_dist_v
-                    self.pred[v] = u
-                    self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-                    self.propagate_changes(self.current_time)
-            return
-
-        # Case 2: 'v' is currently active in the RPQ
-        if latest_pq_node_v.valid:
-            print(f"[{self.current_time:.1f}] Vertex {v} is ACTIVE in RPQ.")
-            new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
-            if self.pred[v] == u:
-                # print(f"[{self.current_time:.1f}] Path to {v} is via {u}. Updating.")
-                if latest_node_v_rb:
-                    self.rpq.revoke_insert(latest_node_v_rb.key)
-                self.dist[v] = new_dist_v
-                self.rpq.invoke_insert(v, self.current_time, new_dist_v, u)
-                self.propagate_changes(self.current_time)
-            else:
-                if new_dist_v < self.dist[v]:
-                    # print(f"[{self.current_time:.1f}] New path to {v} via ({u},{v}) is better.")
-                    self.dist[v] = new_dist_v
-                    self.pred[v] = u
-                    self.rpq.invoke_insert(v, self.current_time, new_dist_v, u)
-                    self.propagate_changes(self.current_time)
-            return
+        # # Case 1: 'v' not in RPQ at all
+        # if not latest_pq_node_v:
+        #     # print(f"[{self.current_time:.1f}] Vertex {v} not found in RPQ history.")
+        #     if self.dist[u] != math.inf:
+        #         potential_new_dist_v = self.dist[u] + new_weight
+        #         if potential_new_dist_v < self.dist[v]:
+        #             print(f"[{self.current_time:.1f}] New edge creates better path to {v}.")
+        #             self.dist[v] = potential_new_dist_v
+        #             self.pred[v] = u
+        #             self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
+        #             self.propagate_changes(self.current_time)
+        #     return
+        # # Case 2: 'v' is currently active in the RPQ
+        # if latest_pq_node_v.valid:
+        #     print(f"[{self.current_time:.1f}] Vertex {v} is ACTIVE in RPQ.")
+        #     new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
+        #     if self.pred[v] == u:
+        #         # print(f"[{self.current_time:.1f}] Path to {v} is via {u}. Updating.")
+        #         if latest_node_v_rb:
+        #             self.rpq.revoke_insert(latest_node_v_rb.key)
+        #         self.dist[v] = new_dist_v
+        #         self.rpq.invoke_insert(v, self.current_time, new_dist_v, u)
+        #         self.propagate_changes(self.current_time)
+        #     else:
+        #         if new_dist_v < self.dist[v]:
+        #             # print(f"[{self.current_time:.1f}] New path to {v} via ({u},{v}) is better.")
+        #             self.dist[v] = new_dist_v
+        #             self.pred[v] = u
+        #             self.rpq.invoke_insert(v, self.current_time, new_dist_v, u)
+        #             self.propagate_changes(self.current_time)
+        #     return
         # Case 3: 'v' has been processed previously - Enhanced handling
         # print(f"[{self.current_time:.1f}] Vertex {v} was already PROCESSED.")
         # Get all deletion times for this vertex (sorted newest first)
@@ -758,106 +598,19 @@ class DynamicDijkstra:
             return
         potential_new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
         path_via_u_used = (self.pred[v] == u)
-        findnew = False
         newdist = potential_new_dist_v
-        # path_via_u_used = False\
-        updated = False
-        # oldpreds = self.pred.copy()
         if path_via_u_used and potential_new_dist_v < self.dist[v]:#most recent pred is u
-        # if u was alreadu the best path, and now its even smaller than that it means theres no 
+        # if u was already the best path, and now its even smaller than that it means theres no 
         # need to check other preds of v
-
             # print(f"[{self.current_time:.1f}] Processed path to {v} was via {u} and is still small.Updating")            
             # Find all deletions where the path was via u
-            # if potential_new_dist_v < self.dist[v]:
-                # inconsistent_del = self.rpq.revoke_del_min(bestnode.value.time)
-            # print(f"[{self.current_time:.1f}] It is better!")            
             self.dist[v] = potential_new_dist_v
             self.pred[v] = u
             self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
             # self.propagate_changes(self.current_time)
             # findnew = False
             updated = True
-            # relevant_deletions = []
-            # rbnodes = []
-            # for del_time in deletion_times:
-            #     rb_node = self.rpq.T_d_m.search((del_time,))
-            #     if rb_node and rb_node.value and rb_node==u:
-            #         rbnodes.append(rb_node)
-            #         relevant_deletions.append(del_time)
-            # distcheck = math.inf
-            # if len(rbnodes)>0:
-            #     bestnode = rbnodes[0]
-            #     for rbn in rbnodes:
-            #         if self.graph[rbn.value.vertex][v]+new_weight<distcheck:
-            #             bestnode = rbn
-            #             distcheck = self.graph[rbn.value.vertex][v]+new_weight
-            #     if distcheck==math.inf:
-            #         print("No old path is good")
-            #         inconsistent_del = self.rpq.revoke_del_min(bestnode.value.time)
-            #         self.dist[v] = new_dist_v
-            #         self.pred[v] = u
-
-
-            # if not relevant_deletions:
-            #     print(f"[{self.current_time:.1f}] No relevant deletions found via {u}. No action needed.")
-            #     return
-
-            # print(f"[{self.current_time:.1f}] Found {len(relevant_deletions)} relevant deletions via {u}")
-            
-            # # Revoke all relevant deletions (from newest to oldest)
-            # for del_time in relevant_deletions:
-            #     print(f"[{self.current_time:.1f}] Revoking deletion at {del_time:.1f}")
-            #     inconsistent_del = self.rpq.revoke_del_min(del_time)
-            #     if inconsistent_del:
-            #         print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-            # Clear processed status
-            # if v in self.processed_times:
-            #     del self.processed_times[v]
-
-            # Invalidate current path
-
-            # If the new weight still provides a valid path, consider it
-            # if potential_new_dist_v < self.dist[v]:
-            #     print(f"[{self.current_time:.1f}] Reinserting {v} with potential new path.")
-            #     self.dist[v] = potential_new_dist_v
-            #     self.pred[v] = u
-            #     self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-
-            # self.propagate_changes(self.current_time)
-
         else:
-            pass
-            # Path wasn't via u - check if new path is better or if we should restore an old path
-            # print(f"[{self.current_time:.1f}] Path used to process {v} was NOT via {u} or it may not be the best one")
-            
-            # # Check if new path via u is better than current
-            # if potential_new_dist_v < new_weight+self.dist[u]:
-            #     print(f"[{self.current_time:.1f}] New path via ({u},{v}) is better. Reactivating {v}.")
-                
-            #     # Revoke only the most recent deletion
-            #     latest_del_time = deletion_times[0]
-            #     print(f"[{self.current_time:.1f}] Revoking latest deletion at {latest_del_time:.1f}")
-            #     inconsistent_del = self.rpq.revoke_del_min(latest_del_time)
-            #     if inconsistent_del:
-            #         print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-            #     # Update processed times
-            #     # if v in self.processed_times and deletion_times:
-            #     #     self.processed_times[v].remove(latest_del_time)
-            #     #     if not self.processed_times[v]:
-            #     #         del self.processed_times[v]
-
-            #     self.dist[v] = potential_new_dist_v
-            #     self.pred[v] = u
-            #     self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-            #     self.propagate_changes(self.current_time)
-            # else:
-                # New path via u isn't better, but check if we should restore an old path
-            # print(f"[{self.current_time:.1f}] Checking historical paths to {v}...")
-            
-            # Find the best historical path that doesn't use (u,v)
             best_historical_dist = math.inf
             best_historical_pred = None
             best_del_time = None
@@ -905,7 +658,6 @@ class DynamicDijkstra:
                 self.propagate_changes(self.current_time)
                 updated = True
             else:
-                
                 # print(f"[{self.current_time:.1f}] No better path found for {v}. Maintaining new  distance.")
                 self.dist[v] = potential_new_dist_v
                 self.pred[v] = u
@@ -913,25 +665,16 @@ class DynamicDijkstra:
                 self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
                 updated = True
         # if updated:
-        from collections import deque   #propagating changes to its ancestors
         # print(f"#propagating changes to ancestors of {v}")
         q = deque([[v,newdist]])
         globalpred = v
         distrn = potential_new_dist_v
         paths = {}
-        from collections import defaultdict, deque
         # print(self.graph)
-        children = defaultdict(list)
-        graph  = self.graph
         
-        for i in range(len(graph)):
-            for j in range(len(graph[i])):
-                if graph[i][j] != math.inf and graph[i][j] != 0:
-                    children[i].append((j, graph[i][j]))
-                elif i not in children:
-                    children[i]=[]
+
         # print(children)
-        vertices = keys_list = list(children.keys())
+
 
         while q:
             currents = q.popleft()
@@ -939,7 +682,7 @@ class DynamicDijkstra:
             distrn = currents[1]
             # Go from current → its children
             checked = []
-            for child, weight in children[currents[0]]:
+            for child, weight in self.children[currents[0]]:
                 checked = []
                 # print(f"Checking child {child} from parent {currents[0]} with weight {weight}")
                 new_dist_c = math.inf                
@@ -967,26 +710,6 @@ class DynamicDijkstra:
                                     best_del_time = deletion_time
                                     # print("here with",best_historical_dist)
                                     # print(best_historical_pred)
-                # for deletion_time in self.processed_times.get(child, []):
-                #     rb_node = self.rpq.T_d_m.search((deletion_time,))
-                #     # print(self.dist)
-                #     # print(f"rbnodes: {rb_node.value.vertex} rbdist: {rb_node.value.dist} rbpred: {rb_node.value.pred}")
-                #     if rb_node.value.pred and rb_node.value.pred not in checked:
-                #         checked.append(rb_node.value.pred)
-                #     if rb_node and rb_node.value:
-                #         historical_node = rb_node.value
-                #         best_historical_pred = historical_node.pred
-                #         # print()
-                #         if historical_node.pred != currents[0]:# Avoid updated path
-                #             if best_historical_pred:
-                #                 # print("Best hsitorical pred dist:", best_historical.dist)
-                #                 # print(self.dist)
-                #                 if (historical_node.dist < best_historical_dist or historical_node.dist<self.graph[currents[0]][child]+distrn) and (historical_node.dist-graph[best_historical_pred][child]==self.dist[best_historical_pred]):
-                #                     best_historical_dist = historical_node.dist
-                #                     best_historical_pred = historical_node.pred
-                #                     best_del_time = deletion_time
-                #                     # print("here with",best_historical_dist)
-                # # print(checked)
                 if best_historical_dist != math.inf:
                     # print(self.dist)
                     # print(f"[{self.current_time:.1f}] Better historical path to {child} via {best_historical_pred} (dist {best_historical_dist:.1f})")
@@ -1007,7 +730,7 @@ class DynamicDijkstra:
                     # only need to check all other parents of v and check
                     bestpred = None
                     bestdist = math.inf
-                    for parent in vertices:
+                    for parent in range(self.num_vertices):
                         if parent not in checked:
                             if self.dist[parent] + self.graph[parent][child] < self.graph[currents[0]][child]+distrn:
                                 bestpred = parent
@@ -1030,216 +753,7 @@ class DynamicDijkstra:
                         self.propagate_changes(self.current_time)
                 q.append([child,new_dist_c])  # Continue BFS to child
 
-
-        # for i in range(0,len(graph)):
-        #     for j in range(1,len(graph[i])):
-        #         if graph[i][j] != math.inf and graph[i][j] != 0:
-        #             if j not in paths:
-        #                 paths[j] = [[i,graph[i][j]]]
-        #             else:
-        #                 paths[j].append([i,graph[i][j]])
-        # while len(q)!=0:
-        #     print(q)
-        #     current = q.popleft()
-        #     print(f"here curr: {current}")
-        #     # if current==v:
-        #     #     distrn = potential_new_dist_v
-        #     #     break
-        #     # else:
-        #     #     distrn = current.value.dist
-        #     print(paths)
-        #     for c, preds in paths.items():
-        #         q.append(c)  # Continue BFS through descendants
-
-        #         for pred in preds:
-        #             weight = pred[1]
-        #             pred = pred[0]
-        #             print(c, pred)
-        #             if c==7:
-        #                 # print(f"here pred: {pred}")
-        #                 break
-        #             if pred == current:
-        #                 print(f"here pred: {pred}")
-        #                 # Revoke any deletion events for vertex v
-        #                 best_historical_dist = math.inf     #best deletion time for the ancestors
-        #                 best_historical_pred = None
-        #                 best_del_time = None
-        #                 # globalpred = 
-        #                 for deletion_time in self.processed_times.get(c, []):# fidning other better preds that may exist
-        #                     rb_node = self.rpq.T_d_m.search((deletion_time,))
-        #                     if rb_node and rb_node.value:
-        #                         historical_node = rb_node.value
-        #                         # Only consider paths that don't go through the updated edge (u,v)
-        #                         if historical_node.pred != pred:          #not looking at path thru v
-        #                             if historical_node.dist < best_historical_dist:
-        #                                 best_historical_dist = historical_node.dist
-        #                                 best_historical_pred = historical_node.pred
-        #                                 best_del_time = deletion_time
-        #                 if best_historical_dist < distrn+self.graph[pred][c]:
-        #                     print(f"[{self.current_time:.1f}] Found better historical path to {c} via {best_historical_pred} (dist {best_historical_dist:.1f})")
-        #                     self.dist[c] = best_historical_dist
-        #                     self.pred[c] = best_historical_pred                                    
-        #                     # Revoke the deletion where this path was recorded
-        #                     print(f"[{self.current_time:.1f}] Revoking deletion at {best_del_time:.1f}")
-        #                     inconsistent_del = self.rpq.revoke_del_min(best_del_time)
-        #                     if inconsistent_del:
-        #                         print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-        #                     # del_node = self.rpq.T_d_m.search((deletion_time,))
-        #                     # if del_node and del_node != self.rpq.T_d_m.NIL and del_node.value:
-        #                     #     self.rpq.revoke_del_min(del_node.value.time)
-        #                 else:
-        #                     print(f"[{self.current_time:.1f}] No better historical path found for {c}")
-        #                     self.dist[c] = distrn+self.graph[pred][c]
-        #                     self.pred[c] = pred
-        #                     self.rpq.invoke_insert(c, self.current_time, distrn+self.graph[pred][c], pred)
-        #                 globalpred = c
-        #                 distrn = distrn+self.dist[c]
-        #             # break
-        #     break
-
         self.propagate_changes(self.current_time)
-
-
-        # self.rpq.print_state(self.current_time)
-        # # Case 3: 'v' has been processed previously - Enhanced handling
-        # print(f"[{self.current_time:.1f}] Vertex {v} was already PROCESSED.")
-        # # Get all deletion times for this vertex (sorted newest first)
-        # deletion_times = sorted(self.processed_times.get(v, []), reverse=True)
-        # print("Processedtimes: ", self.processed_times)
-        # # print("REAL DELS: ", deletion_times)
-        # if not deletion_times:
-        #     print(f"ERROR [{self.current_time:.1f}]: Processed vertex {v} has no deletion times recorded!")
-        #     return
-        # potential_new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
-        # path_via_u_used = (self.pred[v] == u)
-
-        # if path_via_u_used:
-        #     # Edge was part of the final path - need to invalidate all relevant deletions
-        #     print(f"[{self.current_time:.1f}] Processed path to {v} was via {u}. Checking all deletions.")
-            
-        #     # Find all deletions where the path was via u
-        #     relevant_deletions = []
-        #     rbnodes = []
-        #     bestdist = math.inf
-        #     for del_time in deletion_times:
-        #         rb_node = self.rpq.T_d_m.search((del_time,))
-        #         if rb_node and rb_node.value and rb_node.value.vertex!=u:
-        #             rbnodes.append(rb_node)
-        #             relevant_deletions.append(rb_node.value.time)
-        #     if len(rbnodes)>0:
-        #         for rbn in rbnodes:
-        #             if rbn.value.dist+self.graph[rbn.value.vertex][v]<bestdist:
-        #                 bestnode = rbn
-        #                 bestdist = rbn.value.dist+self.graph[rbn.value.vertex][v]
-        #         inconsistent_del = self.rpq.revoke_del_min(bestnode.value.time)
-
-        #     # if not relevant_deletions:
-        #     #     print(f"[{self.current_time:.1f}] No relevant deletions found via {u}. No action needed.")
-        #     #     return
-
-        #     # print(f"[{self.current_time:.1f}] Found {len(relevant_deletions)} relevant deletions via {u}")
-            
-        #     # # Revoke all relevant deletions (from newest to oldest)
-        #     # for del_time in relevant_deletions:
-        #     #     print(f"[{self.current_time:.1f}] Revoking deletion at {del_time:.1f}")
-        #     #     inconsistent_del = self.rpq.revoke_del_min(del_time)
-        #     #     if inconsistent_del:
-        #     #         print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-        #     # Clear processed status
-        #     # if v in self.processed_times:
-        #     #     del self.processed_times[v]
-
-        #     # Invalidate current path
-        #     self.dist[v] = math.inf
-        #     self.pred[v] = None
-
-        #     # If the new weight still provides a valid path, consider it
-        #     if potential_new_dist_v < bestdist:
-        #         print(f"[{self.current_time:.1f}] Reinserting {v} with potential new path.")
-        #         self.dist[v] = potential_new_dist_v
-        #         self.pred[v] = u
-        #         self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-
-        #     self.propagate_changes(self.current_time)
-
-        # else:
-        #     # Path wasn't via u - check if new path is better or if we should restore an old path
-        #     print(f"[{self.current_time:.1f}] Path used to process {v} was NOT via {u}.")
-            
-        #     # Check if new path via u is better than current
-        #     if potential_new_dist_v < self.dist[v]:
-        #         print(f"[{self.current_time:.1f}] New path via ({u},{v}) is better. Reactivating {v}.")
-                
-        #         # Revoke only the most recent deletion
-        #         latest_del_time = deletion_times[0]
-        #         print(f"[{self.current_time:.1f}] Revoking latest deletion at {latest_del_time:.1f}")
-        #         inconsistent_del = self.rpq.revoke_del_min(latest_del_time)
-        #         if inconsistent_del:
-        #             print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-        #         # Update processed times
-        #         # if v in self.processed_times and deletion_times:
-        #         #     self.processed_times[v].remove(latest_del_time)
-        #         #     if not self.processed_times[v]:
-        #         #         del self.processed_times[v]
-
-        #         self.dist[v] = potential_new_dist_v
-        #         self.pred[v] = u
-        #         self.rpq.invoke_insert(v, self.current_time, potential_new_dist_v, u)
-        #         self.propagate_changes(self.current_time)
-        #     else:
-        #         # New path via u isn't better, but check if we should restore an old path
-        #         print(f"[{self.current_time:.1f}] Checking historical paths to {v}...")
-                
-        #         # Find the best historical path that doesn't use (u,v)
-        #         best_historical_dist = math.inf
-        #         best_historical_pred = None
-        #         best_del_time = None
-                
-        #         for del_time in deletion_times:
-        #             rb_node = self.rpq.T_d_m.search((del_time,))
-        #             if rb_node and rb_node.value:
-        #                 historical_node = rb_node.value
-        #                 # Only consider paths that don't go through the updated edge (u,v)
-        #                 p = historical_node.pred
-        #                 if p is not None and p != u and self.dist.get(p, math.inf) < math.inf:
-        #                     edge_weight = self.get_edge_weight(p, v)
-        #                     if edge_weight is None:
-        #                         continue  # Edge no longer exists
-
-        #                     expected_dist = self.dist[p] + edge_weight
-        #                     # Accept only if the path is still consistent
-        #                     if abs(expected_dist - historical_node.dist) < 1e-6:
-        #                         if expected_dist < best_historical_dist:
-        #                             best_historical_dist = expected_dist
-        #                             best_historical_pred = p
-        #                             best_del_time = del_time
-                
-        #         # If found a better historical path, restore it
-        #         if best_historical_dist < self.dist[v]:
-        #             print(f"[{self.current_time:.1f}] Found better historical path to {v} via {best_historical_pred} (dist {best_historical_dist:.1f})")
-                    
-        #             # Revoke the deletion where this path was recorded
-        #             print(f"[{self.current_time:.1f}] Revoking deletion at {best_del_time:.1f}")
-        #             inconsistent_del = self.rpq.revoke_del_min(best_del_time)
-        #             if inconsistent_del:
-        #                 print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
-
-        #             # Update processed times
-        #             # if v in self.processed_times:
-        #             #     self.processed_times[v].remove(best_del_time)
-        #             #     if not self.processed_times[v]:
-        #             #         del self.processed_times[v]
-
-        #             self.dist[v] = best_historical_dist
-        #             self.pred[v] = best_historical_pred
-        #             self.rpq.invoke_insert(v, self.current_time, best_historical_dist, best_historical_pred)
-        #             self.propagate_changes(self.current_time)
-        #         else:
-        #             print(f"[{self.current_time:.1f}] No better path found for {v}. Maintaining current distance.")
-        # self.rpq.print_state(self.current_time)
-
 
     def update_edge(self, u: int, v: int, new_weight: float):
         # """Public method to update an edge weight."""
@@ -1369,15 +883,46 @@ if __name__ == "__main__":
     #     [math.inf, math.inf, math.inf, 1,    5,    0]   # F
     # ]
 
-    # dd = DynamicDijkstra(graph)
-    # source_node = 0
-    # dd.initial_dijkstra(source_node)
+    dd = DynamicDijkstra(graph)
+    source_node = 0
+    dd.initial_dijkstra(source_node)
 
-    # print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
-    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    # print("Predecessors:", dd.pred)
-    # print("-" * 50)
+    print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
+    # dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
+    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
+    dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
+    dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
+    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
+    dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
+    dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
+    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
+    dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
 
+    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    print("Predecessors:", dd.pred)
+    print("-" * 50)
     import numpy as np
 
     import random
@@ -1389,29 +934,29 @@ if __name__ == "__main__":
 
     
 
-    numvertices = 5000
-    numedges = 500
-    numupdates = 200
-    adj = generate_adjacency_matrix(numvertices,numedges)
-    # print(adj)
-    # vertices, edges = convert_adj_matrix_to_vertices_edges(adj)
-    updates = generate_random_updates(adj,numupdates)
-    dd = DynamicDijkstra(adj)
+    # numvertices = 5000
+    # numedges = 500
+    # numupdates = 200
+    # adj = generate_adjacency_matrix(numvertices,numedges)
+    # # print(adj)
+    # # vertices, edges = convert_adj_matrix_to_vertices_edges(adj)
+    # updates = generate_random_updates(adj,numupdates)
+    # dd = DynamicDijkstra(adj)
 
-    source_node = 0
-    # source_node = random.randint(0, numvertices) 
-    print(source_node)
-    dd.initial_dijkstra(source_node)
-    # print(adj)
+    # source_node = 0
+    # # source_node = random.randint(0, numvertices) 
+    # print(source_node)
+    # dd.initial_dijkstra(source_node)
+    # # print(adj)
 
 
-    import time
-    starttime = time.time()
-    for u, v, weight in updates:
-        dd.update_edge(u, v, weight)   
-        # print("complete") 
-    endtime = time.time()
-    print(endtime-starttime)
+    # import time
+    # starttime = time.time()
+    # for u, v, weight in updates:
+    #     dd.update_edge(u, v, weight)   
+    #     # print("complete") 
+    # endtime = time.time()
+    # print(endtime-starttime)
 
     # # # --- Test Edge Updates ---
     # starttime = time.time()
