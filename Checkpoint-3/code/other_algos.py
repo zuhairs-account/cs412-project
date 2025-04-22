@@ -114,15 +114,15 @@ def compare_algorithms():
     # Parameters matching the original code
 
     # small
-    numvertices = 5000
+    numvertices = 200
     numedges = 500
     numupdates = 200
 
     # med
 
-    numvertices = 20000
-    numedges = 20000
-    numupdates = 5000
+    numvertices = 20
+    numedges = 30
+    numupdates = 5
 
     # big
     
@@ -138,9 +138,12 @@ def compare_algorithms():
     def generate_random_updates_no_modify(adj_matrix, n):
         updates = []
         num_vertices = len(adj_matrix)
-        for _ in range(n):
+        i=0
+        while i<n:
             u, v = random.sample(range(num_vertices), 2)
-            if adj_matrix[u][v] != 0 and adj_matrix[u][v] != math.inf:
+            if adj_matrix[u][v] == math.inf:
+                continue
+            if adj_matrix[u][v] != 0:
                 current_weight = adj_matrix[u][v]
                 change = random.choice([-1, 1])
                 max_change = 10
@@ -150,6 +153,7 @@ def compare_algorithms():
             else:
                 new_weight = random.uniform(1, 10)
                 updates.append((u, v, new_weight))
+            i+=1
         return updates
     
     updates = generate_random_updates_no_modify(adj, numupdates)
@@ -171,7 +175,7 @@ def compare_algorithms():
     # time_dijkstra_without_pq = 0
     print(len(updates))
     for i, (u, v, weight) in enumerate(updates):
-        print(i)
+        # print(i)
         graph_dijkstra[u][v] = weight  # Directed graph, so only u->v
         start = time.time()
         # print("her")
@@ -187,7 +191,7 @@ def compare_algorithms():
         time_dijkstra += end - start
         # time_dijkstra_without_pq += end_wopq-start_wopq
         if i == 499:
-            print("bah")
+            # print("bah")
             break
     
     # # --- Bellman-Ford ---

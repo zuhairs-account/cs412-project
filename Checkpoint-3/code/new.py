@@ -475,6 +475,7 @@ class DynamicDijkstra:
         time_to_process = start_time if start_time is not None else self.current_time
         # print(f"\n--- Propagating Changes starting from Time={time_to_process:.1f} ---")
         processed_in_this_run = set() # Basic cycle detection within propagation
+        visited = []
         while True:
             # self.rpq.print_state(time_to_process)
             min_rb_node = self.rpq.find_valid_min_ins()
@@ -512,6 +513,10 @@ class DynamicDijkstra:
             else:
                 # del self.processed_times[u]
                 self.processed_times[u].append(time_to_process)            # self.processed_at_time[u] = time_to_process
+            if u not in visited:
+                visited.append(u)
+            else:
+                continue
             # print(f"[{time_to_process:.1f}] Processing node {u} (Dist={dist_u_rpq:.1f}).")
             if dist_u_rpq < self.dist[u]:            # Update main distance if necessary
                 #  print(f"[{time_to_process:.1f}] Updating main dist for {u} from {self.dist[u]:.1f} to {dist_u_rpq:.1f}")
@@ -588,12 +593,6 @@ class DynamicDijkstra:
         # print(f"[{self.current_time:.1f}] Vertex {v} was already PROCESSED.")
         # Get all deletion times for this vertex (sorted newest first)
         
-        deletion_times = sorted(self.processed_times.get(v, []), reverse=True)
-        # print("Processedtimes: ", self.processed_times)
-        # print("REAL DELS: ", deletion_times)
-        if not deletion_times:
-            # print(f"ERROR [{self.current_time:.1f}]: Processed vertex {v} has no deletion times recorded!")
-            return
         potential_new_dist_v = self.dist[u] + new_weight if self.dist[u] != math.inf else math.inf
         path_via_u_used = (self.pred[v] == u)
         newdist = potential_new_dist_v
@@ -609,6 +608,12 @@ class DynamicDijkstra:
             # Path wasn't via u - check if new path is better or if we should restore an old path
             # print(f"[{self.current_time:.1f}] Path used to process {v} was NOT via {u} or it may not be the best one")
             # Find the best historical path that doesn't use (u,v)
+            deletion_times = sorted(self.processed_times.get(v, []), reverse=True)
+            # print("Processedtimes: ", self.processed_times)
+            # print("REAL DELS: ", deletion_times)
+            if not deletion_times:
+                # print(f"ERROR [{self.current_time:.1f}]: Vertex {v} has no deletion times recorded!")
+                return
             best_historical_dist = math.inf
             best_historical_pred = None
             best_del_time = None
@@ -663,12 +668,18 @@ class DynamicDijkstra:
         # print(f"#propagating changes to ancestors of {v}")
         q = deque([[v,newdist]])
         distrn = potential_new_dist_v
+        processed_child = []
         while q:
             currents = q.popleft()
             distrn = currents[1]
             checked = []
             for child, weight in self.children[currents[0]]:            # Go from current → its children
                 checked = []
+                if child not in processed_child:
+                    processed_child.append(child)
+                else:
+                    # print("mindifng my business")
+                    continue
                 # print(f"Checking child {child} from parent {currents[0]} with weight {weight}")
                 new_dist_c = math.inf                
                 best_historical_dist = math.inf                         
@@ -695,7 +706,7 @@ class DynamicDijkstra:
 
                 if best_historical_dist != math.inf:
                     # print(self.dist)
-                    # print(f"[{self.current_time:.1f}] Better historical path to {child} via {best_historical_pred} (dist {best_historical_dist:.1f})")
+                    print(f"[{self.current_time:.1f}] Better historical path to {child} via {best_historical_pred} (dist {best_historical_dist:.1f})")
                     self.dist[child] = best_historical_dist
                     self.pred[child] = best_historical_pred
                     new_dist_c = best_historical_dist
@@ -717,10 +728,10 @@ class DynamicDijkstra:
                         if parent not in checked and self.graph[parent][child]!=math.inf:
                             if self.dist[parent] + self.graph[parent][child] < self.graph[currents[0]][child]+distrn:
                                 bestpred = parent
-                                bestdist = self.dist[parent] + graph[parent][child]
+                                bestdist = self.dist[parent] + self.graph[parent][child]
                     if bestdist<self.graph[currents[0]][child]+distrn:
                         # print(checked)
-                        print(f"[{self.current_time:.1f}] Found new shortest path thorugh {bestpred} for {child} with dist {bestdist}")
+                        # print(f"[{self.current_time:.1f}] Found new shortest path thorugh {bestpred} for {child} with dist {bestdist}")
                         self.dist[child] = bestdist
                         self.pred[child] = bestpred
                         self.rpq.invoke_insert(child, self.current_time, bestdist, bestpred)
@@ -739,18 +750,18 @@ class DynamicDijkstra:
 
 
     def update_edge(self, u: int, v: int, new_weight: float):
-        # """Public method to update an edge weight."""
-        # if u < 0 or u >= self.num_vertices or v < 0 or v >= self.num_vertices:
-        #     print(f"Error: Invalid vertices ({u}, {v})")
-        #     return
-        # if new_weight < 0:
-        #     print("Error: Negative weights not supported.")
-        #     return
-        # if new_weight == math.inf and self.graph[u][v] == math.inf:
-        #      print(f"Edge ({u}, {v}) already non-existent. No update.")
-        #      return # No change needed
+        """Public method to update an edge weight."""
+        if u < 0 or u >= self.num_vertices or v < 0 or v >= self.num_vertices:
+            print(f"Error: Invalid vertices ({u}, {v})")
+            return
+        if new_weight < 0:
+            print("Error: Negative weights not supported.")
+            return
+        if new_weight == math.inf and self.graph[u][v] == math.inf:
+             print(f"Edge ({u}, {v}) already non-existent. No update.")
+             return # No change needed
 
-        # print(f"\n>>> Updating Edge ({u}, {v}) from {self.graph[u][v]:.1f} to {new_weight:.1f}")
+        print(f"\n>>> Updating Edge ({u}, {v}) from {self.graph[u][v]:.1f} to {new_weight:.1f}")
         # Update graph *before* handling, so handle_edge_update sees the new weight
         self.graph[u][v] = new_weight
         self.handle_edge_update(u, v, new_weight)
