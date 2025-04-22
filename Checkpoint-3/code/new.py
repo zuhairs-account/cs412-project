@@ -475,9 +475,12 @@ class DynamicDijkstra:
         time_to_process = start_time if start_time is not None else self.current_time
         # print(f"\n--- Propagating Changes starting from Time={time_to_process:.1f} ---")
         processed_in_this_run = set() # Basic cycle detection within propagation
+        # iter = 1
         while True:
             # self.rpq.print_state(time_to_process)
             min_rb_node = self.rpq.find_valid_min_ins()
+            # print(f"iter: {iter}")
+            # iter+=1
             if not min_rb_node:
                 # print(f"[{time_to_process:.1f}] RPQ has no more valid nodes. Propagation ends.")
                 break
@@ -655,7 +658,7 @@ class DynamicDijkstra:
                 self.pred[v] = best_historical_pred
                 newdist = best_historical_dist
                 self.rpq.invoke_insert(v, self.current_time, best_historical_dist, best_historical_pred)
-                self.propagate_changes(self.current_time)
+                # self.propagate_changes(self.current_time)
                 updated = True
             else:
                 # print(f"[{self.current_time:.1f}] No better path found for {v}. Maintaining new  distance.")
@@ -671,22 +674,16 @@ class DynamicDijkstra:
         distrn = potential_new_dist_v
         paths = {}
         # print(self.graph)
-        
-
         # print(children)
-
-
         while q:
             currents = q.popleft()
             # print(f"Processing: {currents}")
-            distrn = currents[1]
-            # Go from current → its children
+            distrn = currents[1]            # Go from current → its children
             checked = []
             for child, weight in self.children[currents[0]]:
                 checked = []
                 # print(f"Checking child {child} from parent {currents[0]} with weight {weight}")
-                new_dist_c = math.inf                
-                # Revoke any deletion events for child if needed
+                new_dist_c = math.inf                                       # Revoke any deletion events for child if needed
                 best_historical_dist = math.inf
                 best_historical_pred = None
                 best_del_time = None
@@ -698,9 +695,7 @@ class DynamicDijkstra:
                         checked.append(rb_node.value.pred)
                     if rb_node and rb_node.value:
                         historical_node = rb_node.value
-                        # best_historical_pred = historical_node.pred
-                        # print()
-                        if historical_node.pred != currents[0]:# Avoid updated path
+                        if historical_node.pred != currents[0]:             # Avoid updated path
                             if historical_node.pred:
                                 # print("Best hsitorical pred dist:", best_historical.dist)
                                 # print(self.dist)
@@ -725,7 +720,7 @@ class DynamicDijkstra:
                             # print(f"[!ALERT!] Conflict with Del Min at {inconsistent_del.key[0]:.1f}")
                 else:
                     #no shortest paths before worked 
-                    # either this actually si the best path to v or we have to recompute.
+                    # either this actually is the best path to v or we have to recompute.
                     # if we have to recompute, we have to recompute all the way up to th
                     # only need to check all other parents of v and check
                     bestpred = None
@@ -741,7 +736,7 @@ class DynamicDijkstra:
                         self.dist[child] = bestdist
                         self.pred[child] = bestpred
                         self.rpq.invoke_insert(child, self.current_time, bestdist, bestpred)
-                        self.propagate_changes(self.current_time)
+                        # self.propagate_changes(self.current_time)
                         new_dist_c = bestdist
 
                     else:
@@ -750,10 +745,10 @@ class DynamicDijkstra:
                         self.dist[child] = new_dist_c
                         self.pred[child] = currents[0]
                         self.rpq.invoke_insert(child, self.current_time, new_dist_c, currents[0])
-                        self.propagate_changes(self.current_time)
+                        # self.propagate_changes(self.current_time)
                 q.append([child,new_dist_c])  # Continue BFS to child
 
-        self.propagate_changes(self.current_time)
+        # self.propagate_changes(self.current_time)
 
     def update_edge(self, u: int, v: int, new_weight: float):
         # """Public method to update an edge weight."""
@@ -883,46 +878,46 @@ if __name__ == "__main__":
     #     [math.inf, math.inf, math.inf, 1,    5,    0]   # F
     # ]
 
-    dd = DynamicDijkstra(graph)
-    source_node = 0
-    dd.initial_dijkstra(source_node)
+    # dd = DynamicDijkstra(graph)
+    # source_node = 0
+    # dd.initial_dijkstra(source_node)
 
-    print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
+    # print("\nFINAL STATE AFTER INITIAL DIJKSTRA:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # # dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    # dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
     # dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
-    dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
-    dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 1.0)  # Increase weight (4 -> 100)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
+    # dd.update_edge(0, 3, 100.0)  # Increase weight (4 -> 100)
 
-    print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
-    print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
-    print("Predecessors:", dd.pred)
-    print("-" * 50)
+    # print("\nFINAL STATE AFTER UPDATE (0, 3) -> 4:")
+    # print("Distances:", [f"{d:.1f}" if d != inf else "inf" for d in dd.dist])
+    # print("Predecessors:", dd.pred)
+    # print("-" * 50)
     import numpy as np
 
     import random

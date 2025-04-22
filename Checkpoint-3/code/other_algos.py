@@ -28,36 +28,36 @@ def dijkstra(graph, source):
                     heapq.heappush(pq, (alt, v))
     return dist, pred
 
-# def dijkstra_without_pq(graph, source):
-#     num_vertices = len(graph)
-#     dist = [math.inf] * num_vertices
-#     pred = [None] * num_vertices
-#     dist[source] = 0
-#     array_ = [(0, source)]
-#     visited = set()
-#     # print(num_vertices)
+def dijkstra_without_pq(graph, source):
+    num_vertices = len(graph)
+    dist = [math.inf] * num_vertices
+    pred = [None] * num_vertices
+    dist[source] = 0
+    array_ = [(0, source)]
+    visited = set()
+    # print(num_vertices)
     
-#     while len(array_)>0:
-#         # min_index = 0       #actually tarversing array to find min
-#         min_value = math.inf
-#         # print(array_[0])
-#         for i in range(0, len(array_)):
-#             if array_[i][0] < min_value:
-#                 min_value = array_[i][0]
-#                 min_index = i
+    while len(array_)>0:
+        # min_index = 0       #actually tarversing array to find min
+        min_value = math.inf
+        # print(array_[0])
+        for i in range(0, len(array_)):
+            if array_[i][0] < min_value:
+                min_value = array_[i][0]
+                min_index = i
 
-#         current_dist, u = array_.pop(min_index)
-#         if u in visited:
-#             continue
-#         visited.add(u)
-#         for v in range(num_vertices):
-#             if graph[u][v] != math.inf:
-#                 alt = current_dist + graph[u][v]
-#                 if alt < dist[v]:
-#                     dist[v] = alt
-#                     pred[v] = u
-#                     array_.append((alt, v))
-#     return dist, pred
+        current_dist, u = array_.pop(min_index)
+        if u in visited:
+            continue
+        visited.add(u)
+        for v in range(num_vertices):
+            if graph[u][v] != math.inf:
+                alt = current_dist + graph[u][v]
+                if alt < dist[v]:
+                    dist[v] = alt
+                    pred[v] = u
+                    array_.append((alt, v))
+    return dist, pred
 
 # Bellman-Ford Algorithm
 def bellend_ford(graph, source):
