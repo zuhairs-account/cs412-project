@@ -163,12 +163,12 @@ def compare_algorithms():
         dd.update_edge(u, v, weight)
     endtime_dynamic = time.time()
     time_dynamic = endtime_dynamic - starttime_dynamic
-    
+    print(f"Dynamic Algorithm Update Time: {time_dynamic:.4f} seconds")
     # --- Standard Dijkstra's ---
     graph_dijkstra = [row[:] for row in adj]
     dist_dijkstra, pred_dijkstra = dijkstra(graph_dijkstra, source_node)
     time_dijkstra = 0
-    time_dijkstra_without_pq = 0
+    # time_dijkstra_without_pq = 0
     print(len(updates))
     for i, (u, v, weight) in enumerate(updates):
         print(i)
@@ -207,7 +207,7 @@ def compare_algorithms():
     #         break
     
     # Print results
-    print(f"Dynamic Algorithm Update Time: {time_dynamic:.4f} seconds")
+
     print(f"Standard Dijkstra's with PQ Update Time: {time_dijkstra:.4f} seconds")
     
     # print(f"Bellman-Ford Update Time: {time_bf:.4f} seconds")
