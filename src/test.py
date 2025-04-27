@@ -4,18 +4,18 @@ import time
 import heapq
 from dynamic import DynamicDijkstra, generate_adjacency_matrix, generate_random_updates
 
-# Standard Dijkstra's Algorithm
+# Standard Dijkstra's Algorithm with priority queue
 def dijkstra(graph, source):
     num_vertices = len(graph)
-    dist = [math.inf] * num_vertices
+    dist = [math.inf] * num_vertices  # Distance from source to each vertex
     pred = [None] * num_vertices
     dist[source] = 0
-    pq = [(0, source)]
+    pq = [(0, source)]     #priority queue 
     visited = set()
     # print(num_vertices)
     
     while pq:
-        current_dist, u = heapq.heappop(pq)
+        current_dist, u = heapq.heappop(pq)       #get vertices with smallest dist
         if u in visited:
             continue
         visited.add(u)
@@ -28,14 +28,14 @@ def dijkstra(graph, source):
                     heapq.heappush(pq, (alt, v))
     return dist, pred
 
+# dijkstra without pq - slower 
 def dijkstra_without_pq(graph, source):
     num_vertices = len(graph)
     dist = [math.inf] * num_vertices
     pred = [None] * num_vertices
     dist[source] = 0
-    array_ = [(0, source)]
+    array_ = [(0, source)]       #array instead of pq
     visited = set()
-    # print(num_vertices)
     
     while len(array_)>0:
         # min_index = 0       #actually tarversing array to find min
@@ -59,7 +59,8 @@ def dijkstra_without_pq(graph, source):
                     array_.append((alt, v))
     return dist, pred
 
-# Bellman-Ford Algorithm
+
+# Bellman-Ford Algorithm - not optimized version
 def bellend_ford(graph, source):
     num_vertices = len(graph)
     dist = [math.inf] * num_vertices
@@ -83,6 +84,9 @@ def bellend_ford(graph, source):
     
     return dist, pred
 
+
+
+# bellman fors optimized - early termination 
 def bellman_ford(graph, source):
     num_vertices = len(graph)
     dist = [math.inf] * num_vertices
@@ -109,7 +113,7 @@ def bellman_ford(graph, source):
     
     return dist, pred
 
-# Main comparison function
+# main comparison func - dijkstra vs bellman ford 
 def compare_algorithms():
     # Parameters matching the original code
 

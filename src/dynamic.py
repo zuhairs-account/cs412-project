@@ -12,19 +12,21 @@ import random
 class PQNode:
     vertex: int
     time: float  # Insertion time into the conceptual PQ
-    dist: float
-    pred: Optional[int]
-    valid: bool = True # Is this specific entry currently considered valid?
+    dist: float          # Priority (distance for MST/Dijkstra style uses)
+    pred: Optional[int]  # Predecessor vertex (optional)
+    valid: bool = True   # Whether this node is currently valid
     deleted_by_node: Optional['RBNode'] = None # Link to T_d_m node that invalidated this
     tins_node: Optional['RBNode'] = field(default=None, repr=False) # Link back to RBNode in T_ins
 
+
+
 @dataclass
 class RBNode:
-    key: tuple
+    key: tuple     #usually (dist,time )
     value: Any # PQNode for T_ins, PQNode (deleted one) for T_d_m
     left: Optional['RBNode'] = None
     right: Optional['RBNode'] = None
-    color: str = 'RED'
+    color: str = 'RED'   #new nodes are red by default 
     parent: Optional['RBNode'] = None
 
     def __lt__(self, other):
@@ -121,6 +123,7 @@ class RBTree:
                 break
         self.root.color = 'BLACK' # Root must always be black
 
+
     def minimum(self, start_node: Optional[RBNode] = None) -> Optional[RBNode]:
         node = start_node if start_node else self.root
         # Check if start_node is None or NIL
@@ -133,6 +136,7 @@ class RBTree:
         # If start_node was provided, it might point to NIL.
         return node if node != self.NIL else None
 
+
     def successor(self, node: Optional[RBNode]) -> Optional[RBNode]:
         if node is None or node == self.NIL:        # Check input node
              return None
@@ -144,6 +148,7 @@ class RBTree:
             node = parent
             parent = parent.parent
         return parent if parent != self.NIL else None        # Return parent if it's not NIL, otherwise None
+
 
     def remove_node(self, key_to_remove: tuple) -> Optional[RBNode]:
         node = self.search(key_to_remove)        # Check if node was found
@@ -179,6 +184,8 @@ class RBTree:
                  succ.left.parent = succ # Assign parent only if not NIL
         return original_node         # Return the node that contained the original key/value
 
+
+
     def _transplant_tree(self, u, v):        # Assume u is not NIL based on how remove_node calls this
         if u.parent == self.NIL:
             self.root = v
@@ -188,6 +195,7 @@ class RBTree:
             u.parent.right = v        # Assign parent to v only if v is not NIL
         if v != self.NIL:
             v.parent = u.parent
+
 
     def inorder(self) -> list[tuple[tuple, Any]]:
         result = []
@@ -213,6 +221,7 @@ class RBTree:
         # result will be None if no suitable node found
         return result
 
+
     def search_max_less(self, key: tuple) -> Optional[RBNode]:
         node = self.root
         result = None # Initialize result to None
@@ -226,14 +235,19 @@ class RBTree:
         # result will be None if no suitable node found
         return result
 
+
+
 # --- Retroactive Priority Queue ---
 
 class RPQ:
+    """Retroactive Priority Queue using two Red-Black trees (insertions and deletions)."""
     def __init__(self):
         self.T_ins = RBTree()
         self.T_d_m = RBTree()
 
     def find_first_inconsistent_delete(self, new_node_key: tuple) -> Optional[RBNode]:
+         """Finds the first deletion that would become invalid if a new insert occurs."""
+
          insert_time = new_node_key[1]
          potential_del_node = self.T_d_m.search_min_greater_equal((insert_time,))
          while potential_del_node: # Already checks if potential_del_node is not None
@@ -252,8 +266,11 @@ class RPQ:
              potential_del_node = self.T_d_m.successor(potential_del_node)                                                    # Loop condition 'while potential_del_node' handles the None case
          return None
 
+
     def invoke_insert(self, vertex: int, time: float, dist: float, pred: Optional[int]) -> Optional[RBNode]:
+        
         # print(f"RPQ: Invoke Insert vertex={vertex}, time={time:.1f}, dist={dist:.1f}, pred={pred}")
+        """Inserts a new item into the priority queue."""
         node = PQNode(vertex=vertex, time=time, dist=dist, pred=pred, valid=True)
         key = (dist, time)
         rb_node_ins = self.T_ins.insert(key, node)        # node.tins_node should be set within insert now
@@ -320,9 +337,9 @@ class RPQ:
             potential_del_node = self.T_d_m.successor(potential_del_node) # Returns None eventually
         return None
 
+
     # Add mark_tins_valid parameter with default True for backward compatibility
     def revoke_del_min(self, time: float, mark_tins_valid: bool = True) -> Optional[RBNode]:
-        # print(f"RPQ: Revoke Del_Min for time={time:.1f} (Mark T_ins Valid: {mark_tins_valid})") # Log modification
         del_key = (time,)
         node_in_tdm = self.T_d_m.search(del_key)
         if not node_in_tdm:
@@ -380,6 +397,7 @@ class RPQ:
                 #  print(f"RPQ: Skipping inconsistency check after revoke; revived node key unavailable.")
         return None # No immediate inconsistency found or check skipped/failed
 
+
     def find_vertex_rbnode_in_tins(self, vertex: int, active_only: bool = True) -> Optional[RBNode]:
          latest_node: Optional[RBNode] = None
          latest_time = -1.0
@@ -434,6 +452,7 @@ class RPQ:
         print(f"  Total T_d_m Nodes: {len(nodes_del)}")
         print("=" * 30)
 from collections import defaultdict, deque
+
 
 class DynamicDijkstra:
     def __init__(self, graph: list[list[float]]):
@@ -549,6 +568,8 @@ class DynamicDijkstra:
             self._increment_time()
             time_to_process = self.current_time
             processed_in_this_run.clear() # Reset for next minimum find
+
+
 
     def handle_edge_update(self, u: int, v: int, new_weight: float):
         # print(f"\n--- Handling Edge Update ({u}, {v}) to New Weight={new_weight:.1f} at Time={self.current_time:.1f} ---")
