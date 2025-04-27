@@ -4,15 +4,15 @@ import math
 
 # Adjacency matrix
 inf = math.inf
-graph = [
-    [inf, 2, 5, 4, inf, inf, inf, inf],
-    [inf, inf, 2, 4, 7, inf, inf, inf],
-    [inf, inf, inf, 1, inf, inf, inf, inf],
-    [inf, inf, inf, inf, inf, 4, 3, inf],
-    [inf, inf, inf, inf, inf, inf, inf, 5],
-    [inf, inf, inf, inf, inf, inf, inf, 7],
-    [inf, inf, inf, inf, inf, inf, inf, 3],
-    [inf, inf, inf, inf, inf, inf, inf, inf]
+graph = [ 
+    [inf,   2,   5,   4,   inf, inf, inf, inf],   # Node 0
+    [inf, inf,   2,   inf,   7,   inf, inf,  inf],  # Node 1
+    [inf, inf,inf,   inf,   inf, inf, inf, inf],   # Node 2
+    [inf, inf, inf, inf,   inf,   4,   3, inf],  # Node 3
+    [inf, inf, inf, inf, inf, inf, inf,   5],    # Node 4
+    [inf, inf, inf, inf, inf, inf, inf,   7],    # Node 5
+    [inf, inf, inf, inf, inf, inf, inf,   3],    # Node 6
+    [inf, inf, inf, inf, inf, inf, inf, inf]     # Node 7
 ]
 
 # Create the directed graph

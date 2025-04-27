@@ -27,45 +27,13 @@ def dijkstra(graph, source):
                     pred[v] = u
                     heapq.heappush(pq, (alt, v))
     return dist, pred
-
-def dijkstra_without_pq(graph, source):
-    num_vertices = len(graph)
-    dist = [math.inf] * num_vertices
-    pred = [None] * num_vertices
-    dist[source] = 0
-    array_ = [(0, source)]
-    visited = set()
-    # print(num_vertices)
-    
-    while len(array_)>0:
-        # min_index = 0       #actually tarversing array to find min
-        min_value = math.inf
-        # print(array_[0])
-        for i in range(0, len(array_)):
-            if array_[i][0] < min_value:
-                min_value = array_[i][0]
-                min_index = i
-
-        current_dist, u = array_.pop(min_index)
-        if u in visited:
-            continue
-        visited.add(u)
-        for v in range(num_vertices):
-            if graph[u][v] != math.inf:
-                alt = current_dist + graph[u][v]
-                if alt < dist[v]:
-                    dist[v] = alt
-                    pred[v] = u
-                    array_.append((alt, v))
-    return dist, pred
-
 # Bellman-Ford Algorithm
 def bellend_ford(graph, source):
     num_vertices = len(graph)
     dist = [math.inf] * num_vertices
     pred = [None] * num_vertices
     dist[source] = 0
-    print(num_vertices)
+    # print(num_vertices)
     
     for _ in range(num_vertices - 1):
         for u in range(num_vertices):
@@ -120,9 +88,9 @@ def compare_algorithms():
 
     # med
 
-    numvertices = 20
-    numedges = 30
-    numupdates = 5
+    numvertices = 5000
+    numedges = 5000
+    numupdates = 50
 
     # big
     
@@ -173,7 +141,7 @@ def compare_algorithms():
     dist_dijkstra, pred_dijkstra = dijkstra(graph_dijkstra, source_node)
     time_dijkstra = 0
     # time_dijkstra_without_pq = 0
-    print(len(updates))
+    # print(len(updates))
     for i, (u, v, weight) in enumerate(updates):
         # print(i)
         graph_dijkstra[u][v] = weight  # Directed graph, so only u->v
@@ -181,40 +149,32 @@ def compare_algorithms():
         # print("her")
         dist_dijkstra, pred_dijkstra = dijkstra(graph_dijkstra, source_node)
         end = time.time()
-        # start_wopq = time.time()
-        # # print("her")
-        # dist_dijkstra_wopq, pred_dijkstra_wopq = dijkstra_without_pq(graph_dijkstra, source_node)
-        # end_wopq = time.time()
-        # if dist_dijkstra!=dist_dijkstra_wopq or pred_dijkstra!=pred_dijkstra_wopq:
-        #     print("Dijkstra without and with PQ are not giving same results!")
-        #     break
         time_dijkstra += end - start
-        # time_dijkstra_without_pq += end_wopq-start_wopq
         if i == 499:
             # print("bah")
             break
     
     # # --- Bellman-Ford ---
-    # graph_bf = [row[:] for row in adj]
-    # dist_bf, pred_bf = bellman_ford(graph_bf, source_node)
+    graph_bf = [row[:] for row in adj]
+    dist_bf, pred_bf = bellman_ford(graph_bf, source_node)
     # print("guh")
-    # time_bf = 0
-    # for i, (u, v, weight) in enumerate(updates):
-    #     print(i)
-    #     graph_bf[u][v] = weight  # Directed graph, so only u->v
-    #     start = time.time()
-    #     dist_bf, pred_bf = bellman_ford(graph_bf, source_node)
-    #     end = time.time()
-    #     time_bf += end - start
-    #     if i == 199:
-    #         print("dah")
-    #         break
+    time_bf = 0
+    for i, (u, v, weight) in enumerate(updates):
+        # print(i)
+        graph_bf[u][v] = weight  # Directed graph, so only u->v
+        start = time.time()
+        dist_bf, pred_bf = bellman_ford(graph_bf, source_node)
+        end = time.time()
+        time_bf += end - start
+        if i == 199:
+            # print("dah")
+            break
     
     # Print results
 
     print(f"Standard Dijkstra's with PQ Update Time: {time_dijkstra:.4f} seconds")
     
-    # print(f"Bellman-Ford Update Time: {time_bf:.4f} seconds")
+    print(f"Bellman-Ford Update Time: {time_bf:.4f} seconds")
 
 if __name__ == "__main__":
     compare_algorithms()

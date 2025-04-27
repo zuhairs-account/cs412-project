@@ -33,5 +33,6 @@ These systems require the shortest paths to be recalculated efficiently upon upd
 
 - ## Setup and Running
 
-- Navigate to the test repository in Checkpoint 3. There are many files you may try out for yourself by simply running the Python file you pick, but we recommend new.py for multiple test cases, and new_visual.py for a visualization of selected test cases.
+- Navigate to the src folder. dynamic.py contains some test runs that you can run to test our the correctness of the algorithm. To compare the algorithm on random graphs, head over to test.py in the same folder, update your desires number of vertices, nodes, and updates and check our how fast dynamic dijkstra is compared to static version! You can also check our visualizations in the visualizations folder. 
 
+P.S: The print statements within the running algorithm are commented out to evaluate running-time without console output overhead.
